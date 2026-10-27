@@ -42,6 +42,13 @@
   table.main tr.click:hover td, table.main tr.click.active td { background:inherit; }
   table.main tr.click:hover { background:#222; } table.main tr.click.active { background:#1f2a3d; }
   table.main tr.off { opacity:.7; }
+  .subnote { font-size:16px; color:#777; margin-left:8px; }
+  table.top td.rk { width:64px; color:#6b8fd6; font-weight:700; text-align:center; }
+  table.top th:first-child { text-align:center; }
+  table.top td.cn { text-align:left; }
+  table.top td.cn small { display:block; color:#888; font-weight:400; font-size:15px; margin-top:2px; }
+  table.top th:nth-child(2) { text-align:left; }
+  table.top td { font-size:20px; padding:14px 8px; }
   .legend { color:#bbb; font-size:22px; margin-bottom:6px; }
   .legend i { display:inline-block; width:16px; height:16px; margin:0 6px 0 0; vertical-align:-1px; border-radius:2px; }
   .legend i.g { background:var(--grey); } .legend i.b { background:var(--blue); margin-left:10px; }
@@ -118,6 +125,7 @@
     .detail h3 { font-size:20px; } .detail .lead { font-size:16px; }
     .srow { grid-template-columns:minmax(100px,164px) 1fr 152px; font-size:16px; } .srow .v b { font-size:17px; } .srow .v small { white-space:nowrap; font-size:13px; }
     table.sm { font-size:15px; }
+    table.top td { font-size:17px; padding:11px 6px; } table.top td.rk { width:44px; }
     .sec.one .srow { grid-template-columns:minmax(110px,200px) 1fr 64px; }
   }
   /* 카드 폭 620px 이하 (휴대폰 등) */
@@ -131,6 +139,7 @@
     .bars .val { text-align:left; }
     .note { font-size:14px; } .detail { padding:16px 14px; }
     .srow { grid-template-columns:1fr; gap:3px; } .srow .v { text-align:left; }
+    table.top td { font-size:16px; padding:10px 4px; } table.top td.rk { width:36px; } table.top td.cn small { font-size:13px; }
     table.sm { font-size:14px; } table.sm th, table.sm td { padding:8px 6px; }
     table.sm th:not(:first-child), table.sm td:not(:first-child) { white-space:nowrap; }
     table.sm td:first-child { width:auto; }
@@ -328,6 +337,11 @@ function wire(card, panel, render) {
   const run = cats.reduce((a,c)=>a+c[1],0), setup = cats.reduce((a,c)=>a+c[2],0);
   const rate = (K.completers / K.participants * 100).toFixed(1);
   const maxP = Math.max(...cats.map(c=>c[4])), W = 88;
+  // 상위 10위까지(동점은 모두 포함, 동점은 같은 순위)
+  const ranked = D4.courses.filter(c=>c.c26>0).sort((a,b)=>b.c26-a.c26||b.cum-a.cum||a.no-b.no);
+  let topRows = ranked.map((c,i)=>({...c, rank: 1+ranked.filter(x=>x.c26>c.c26).length}));
+  topRows = topRows.filter(r=>r.rank<=10);
+  const TOP_SHOW = 5;   // 처음에 보여줄 순위(6위 이하는 접기)
   card.innerHTML = `
     <div class="head"><h2><span>04</span>${K.title}</h2><div class="basis">${K.basis}</div></div>
     <div class="kpis">
@@ -344,10 +358,23 @@ function wire(card, panel, render) {
         <div class="name">${c[0]} (${c[1]}/${c[2]}개)<span class="caret">▸</span></div>
         <div class="track"><div class="grey" style="width:${c[4]/maxP*W}%"></div><div class="blue" style="width:${c[3]/maxP*W}%"></div></div>
         <div class="val">${c[3]} / ${fmt(c[4])}</div></div>`).join("")}</div>
+    <div class="sub" style="margin-top:30px">이수자 상위 10개 과정 <span class="subnote">2026-1 이수 건수 기준</span></div>
+    <p class="hint">▸ 5위까지 표시합니다 · 이수 건수가 같은 과정은 같은 순위로 표시하며, 나머지는 아래 버튼으로 펼칠 수 있습니다</p>
+    <div class="sec" style="margin-top:0">
+      <table class="main top">
+        <tr><th>순위</th><th>과정명</th><th>2026-1 이수(건)</th><th>누적 이수(건)</th></tr>
+        ${topRows.map(r=>`<tr class="${r.rank>TOP_SHOW?'extra':''}"><td class="rk">${r.rank}</td>
+          <td class="cn">${esc(r.name)}<small>${esc(r.cat)}</small></td><td>${r.c26}</td><td>${fmt(r.cum)}</td></tr>`).join("")}
+      </table>
+      ${topRows.some(r=>r.rank>TOP_SHOW)?`<button class="more" type="button" data-more>나머지 ${topRows.filter(r=>r.rank>TOP_SHOW).length}개 과정 보기</button>`:""}
+    </div>
     <div class="detail" id="d4"></div>
     <div class="note"><p>분류: 과정명 기준 · 괄호=운영/설치 과정 · 학생은 분류별 고유 학번 · 운영과정: 2026학년도 강좌 개설 과정 · 참여 학생: 2026학년도 마이크로디그리 인정 수강 학생(고유 학번)</p>
     <p>이수자: 2026-1 확정 ${K.cases}건(복수과정 이수 포함), 학생 ${K.completers}명, 2학기 이수는 졸업 시점 집계 · 이수율=이수자÷참여 학생 · 설치 이후 누적 이수 ${fmt(K.cumulative)}건</p>
+    <p>상위 과정: 과정별 2026-1 확정 이수 건수(복수과정 이수 포함)이며, 누적 이수는 2023-1~2026-1 합계입니다.</p>
     <p>상세: 막대의 이수자는 분류별 고유 학번(복수 분류 이수 시 중복 포함)이고, 상세의 「2026-1 이수」는 과정별 이수 건수입니다.</p></div>`;
+
+  card.querySelectorAll("[data-more]").forEach(b => b.dataset.label = b.textContent);
 
   function render(key) {
     const [kind, name] = key.split(":");
@@ -355,12 +382,10 @@ function wire(card, panel, render) {
       const sers = [{name:"졸업",color:COL.a},{name:"미졸업",color:COL.b}];
       const col = D4.colleges.map(r=>({label:r[0],sub:`학생 ${r[2]}명`,vals:[+r[3],+r[4]]}));
       const dep = D4.depts.map(r=>({label:r[1],sub:r[0],vals:[+r[2]],note:`학생 ${r[3]}명`}));
-      const top = D4.top.map(r=>({label:r[0],vals:[+r[2],(+r[1])-(+r[2])]}));
       return `<h3>이수자 상세 (2026-1 확정 ${K.cases}건 · 학생 ${K.completers}명)</h3>
         <p class="lead">통합정보시스템 기준학점 달성 명단(2025학년도 후기 졸업 대상, 4~5학년) 기준입니다. 졸업 ${D4.colleges.reduce((a,r)=>a+(+r[3]),0)}건 · 미졸업 ${D4.colleges.reduce((a,r)=>a+(+r[4]),0)}건</p>`
         + section("소속 단과대학별 분포 (이수 건수)", col, sers, 8, "학생 수 열 합계는 352명이나 단과대학 기재가 2곳인 1명이 있어 실제 학생 수는 351명입니다.")
-        + section("이수 상위 10개 학과 (이수 건수)", dep, [{name:"이수 건수",color:COL.a}])
-        + section("이수 상위 10개 과정 (이수 건수)", top, sers);
+        + section("이수 상위 10개 학과 (이수 건수)", dep, [{name:"이수 건수",color:COL.a}]);
     }
     const list = D4.courses.filter(c=>c.cat===name).sort((a,b)=>(b.c26||0)-(a.c26||0)||(b.cum||0)-(a.cum||0)||a.no-b.no);
     const b = D4.bycat[name];
