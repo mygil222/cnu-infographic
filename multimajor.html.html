@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { background:#0f0f0f; display:flex; justify-content:center; padding:40px;
+         font-family:'Pretendard','Noto Sans KR',sans-serif; }
+  .card { width:920px; background:#1a1a1a; border:1px solid #333; border-radius:24px;
+          padding:44px; color:#e8e8e8; }
+  .head { display:flex; justify-content:space-between; align-items:baseline; }
+  .head h2 { margin:0; font-size:30px; }
+  .head h2 span { color:#888; font-size:24px; margin-right:12px; font-weight:400; }
+  .head .basis { color:#999; font-size:20px; }
+  .kpis { display:flex; gap:60px; margin:36px 0; }
+  .kpi .label { color:#999; font-size:22px; }
+  .kpi .num { font-family:Georgia,serif; font-size:52px; }
+  .sub { color:#999; font-size:22px; margin-bottom:12px; }
+  table { width:100%; border-collapse:collapse; font-size:22px; }
+  th { color:#999; font-weight:400; text-align:right; padding:14px 8px;
+       border-bottom:1px solid #444; }
+  td { text-align:right; padding:20px 8px; border-bottom:1px solid #333; }
+  th:first-child, td:first-child { text-align:left; }
+  td:first-child { font-weight:700; }
+  .note { color:#888; font-size:18px; line-height:1.7; margin-top:24px; }
+</style>
+</head>
+<body>
+<div class="card" id="card"></div>
+
+<script>
+// ★ 엑셀 '요약' 시트 값만 여기서 수정하세요
+const data = {
+  title: "다전공 현황", basis: "2026학년도 1학기 이수 (8.19. 기준)",
+  kpis: [["복수전공 이수자",417],["부전공 이수자",144],["융합전공 계 이수자",177]],
+  rows: [
+    ["연계전공",16,70,"4.4"],
+    ["산학융복합전공",null,null,null],
+    ["자기설계전공",1,6,"6.0"],
+    ["융합전공",7,90,"12.9"],
+    ["DSC공유대학",2,11,"5.5"]
+  ],
+  note: "2026학년도 1학기 융복합창의전공 이수자 명부(2026.8.19. 기준 재학 538명·휴학 23명, 계 561건) · 교직 복수전공은 별도 명부로 미포함 · 융합전공 계는 복수·부전공 이수자와 중복 포함 · 프로그램은 이수자가 있는 전공 수 · 유형은 학사운영 지침 별표 및 이수학과 기준 · 2학기 선발자는 이수자 미확정으로 제외"
+};
+
+const v = x => x === null ? "-" : x;
+document.getElementById("card").innerHTML = `
+  <div class="head"><h2><span>03</span>${data.title}</h2><div class="basis">${data.basis}</div></div>
+  <div class="kpis">${data.kpis.map(k =>
+    `<div class="kpi"><div class="label">${k[0]}</div><div class="num">${k[1]}</div></div>`).join("")}</div>
+  <div class="sub">융합전공 유형별</div>
+  <table>
+    <tr><th>유형</th><th>프로그램(개)</th><th>이수자(명)</th><th>프로그램당 평균(명)</th></tr>
+    ${data.rows.map(r => `<tr><td>${r[0]}</td><td>${v(r[1])}</td><td>${v(r[2])}</td><td>${v(r[3])}</td></tr>`).join("")}
+  </table>
+  <div class="note">${data.note}</div>`;
+</script>
+</body>
+</html>

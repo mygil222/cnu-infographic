@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { background:#0f0f0f; display:flex; justify-content:center; padding:40px;
+         font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; }
+  .card { width:920px; background:#1a1a1a; border:1px solid #333; border-radius:24px;
+          padding:44px; color:#e8e8e8; }
+  .head { display:flex; justify-content:space-between; align-items:baseline; }
+  .head h2 { margin:0; font-size:30px; }
+  .head h2 span { color:#888; font-size:24px; margin-right:12px; font-weight:400; }
+  .head .basis { color:#999; font-size:20px; }
+  .kpis { display:flex; gap:56px; margin:36px 0 34px; }
+  .kpi .label { color:#999; font-size:22px; }
+  .kpi .num { font-family:Georgia,serif; font-size:52px; }
+  .kpi .num small { font-size:26px; color:#999; }
+  .kpi .num .unit { font-size:30px; color:#e8e8e8; }
+  .kpi .rate { color:#6ee7a8; font-size:20px; margin-top:4px; }
+  .legend { color:#bbb; font-size:22px; margin-bottom:14px; }
+  .legend i { display:inline-block; width:16px; height:16px; margin:0 6px 0 0; vertical-align:-1px; }
+  .legend i.g { background:#4a4a4a; }
+  .legend i.b { background:#3b82f6; margin-left:10px; }
+  .bars .row { display:grid; grid-template-columns:330px 1fr 150px; align-items:center;
+               height:48px; font-size:22px; }
+  .bars .name { font-weight:700; }
+  .bars .track { position:relative; height:24px; }
+  .bars .grey { position:absolute; left:0; top:0; height:24px; background:#4a4a4a; border-radius:3px; }
+  .bars .blue { position:absolute; left:0; top:0; height:24px; background:#3b82f6;
+                border-radius:3px 0 0 3px; min-width:4px; }
+  .bars .val { text-align:right; font-weight:700; }
+  .note { color:#888; font-size:18px; line-height:1.7; margin-top:24px; }
+  .note p { margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="card" id="card"></div>
+
+<script>
+// ★ 숫자는 여기서만 수정하세요 (엑셀 '04-5 분류별 현황' 시트 + 아래 KPI 출처 참고)
+const data = {
+  title: "마이크로디그리 현황", basis: "2026학년도 누적 · 2026.10. 기준",
+  kpis: {
+    run: 149, setup: 188,          // 운영과정 / 설치과정
+    students: 10394,               // 참여 학생(고유 학번)
+    completers: 351, cases: 432,   // 이수자 학생 / 건수
+    cumulative: 2707               // 설치 이후 누적 이수 건수
+  },
+  cats: [                          // [분류, 운영과정, 설치과정, 이수 학생, 참여 학생]
+    ["AI·데이터", 24, 41, 128, 4818],
+    ["공학·기술", 28, 37,  72, 2536],
+    ["인문·사회", 53, 60, 101, 4684],
+    ["바이오·헬스", 44, 50, 55, 1336]
+  ],
+  notes: [
+    "분류: 과정명 기준 · 괄호=운영/설치 과정 · 학생은 분류별 고유 학번 · 운영과정: 2026학년도 강좌 개설 과정 · 참여 학생: 2026학년도 마이크로디그리 인정 수강 학생(고유 학번)",
+    "이수자: 2026-1 확정 432건(복수과정 이수 포함), 학생 351명, 2학기 이수는 졸업 시점 집계 · 이수율=이수자÷참여 학생 · 설치 이후 누적 이수 2,707건"
+  ]
+};
+
+const k = data.kpis;
+const rate = (k.completers / k.students * 100).toFixed(1);
+const fmt = n => n.toLocaleString("en-US");
+const maxP = Math.max(...data.cats.map(c => c[4]));
+const W = 88;   // 가장 긴 막대가 차지하는 폭(%)
+
+document.getElementById("card").innerHTML = `
+  <div class="head"><h2><span>04</span>${data.title}</h2><div class="basis">${data.basis}</div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="label">운영과정 / 설치과정</div>
+      <div class="num">${k.run} <small>/ ${k.setup}</small></div></div>
+    <div class="kpi"><div class="label">참여 학생</div>
+      <div class="num">${fmt(k.students)}</div></div>
+    <div class="kpi"><div class="label">이수자 (학생 / 건수)</div>
+      <div class="num">${k.completers}<span class="unit">명</span> <small>/ ${k.cases}건</small></div>
+      <div class="rate">이수율 ${rate}% (학생 기준)</div></div>
+  </div>
+  <div class="legend"><i class="g"></i>참여 학생<i class="b"></i>이수자</div>
+  <div class="bars">${data.cats.map(c => `
+    <div class="row">
+      <div class="name">${c[0]} (${c[1]}/${c[2]}개)</div>
+      <div class="track">
+        <div class="grey" style="width:${c[4]/maxP*W}%"></div>
+        <div class="blue" style="width:${c[3]/maxP*W}%"></div>
+      </div>
+      <div class="val">${c[3]} / ${fmt(c[4])}</div>
+    </div>`).join("")}
+  </div>
+  <div class="note">${data.notes.map(n => `<p>${n}</p>`).join("")}</div>`;
+</script>
+</body>
+</html>
