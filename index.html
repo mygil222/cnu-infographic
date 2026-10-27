@@ -29,9 +29,9 @@
   .click { cursor:pointer; transition:background .15s; }
   .click:hover { background:#222; }
   .click:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
-  .click.active { background:#1f2a3d; }
+  .click.active, .click.sel { background:#1f2a3d; }
   .caret { color:var(--blue); font-size:16px; margin-left:8px; display:inline-block; transition:transform .15s; }
-  .active .caret { transform:rotate(90deg); }
+  .active .caret, .sel .caret { transform:rotate(90deg); }
   .hint { color:#6b8fd6; font-size:17px; margin:0 0 12px; }
   .sub { color:var(--mute); font-size:22px; margin-bottom:6px; }
   table.main { width:100%; border-collapse:collapse; font-size:22px; }
@@ -116,7 +116,7 @@
     .bars .row { grid-template-columns:200px 1fr 120px; font-size:18px; height:48px; }
     .note { font-size:14px; } .detail { padding:20px; }
     .detail h3 { font-size:20px; } .detail .lead { font-size:16px; }
-    .srow { grid-template-columns:minmax(90px,140px) 1fr 168px; font-size:16px; } .srow .v b { font-size:17px; } .srow .v small { white-space:nowrap; font-size:13px; }
+    .srow { grid-template-columns:minmax(100px,164px) 1fr 152px; font-size:16px; } .srow .v b { font-size:17px; } .srow .v small { white-space:nowrap; font-size:13px; }
     table.sm { font-size:15px; }
     .sec.one .srow { grid-template-columns:minmax(110px,200px) 1fr 64px; }
   }
@@ -224,7 +224,7 @@ function wire(card, panel, render) {
     panel.scrollIntoView({behavior:"smooth", block:"nearest"});
   });
   card.addEventListener("keydown", ev => {
-    if ((ev.key==="Enter"||ev.key===" ") && ev.target.matches("[data-key],[data-tog]")) { ev.preventDefault(); ev.target.click(); }
+    if ((ev.key==="Enter"||ev.key===" ") && ev.target.matches("[data-key],[data-tog],[data-view]")) { ev.preventDefault(); ev.target.click(); }
   });
 }
 
@@ -233,20 +233,23 @@ function wire(card, panel, render) {
   const card = document.getElementById("c3");
   const TYPES = ["연계전공","산학융복합전공","자기설계전공","융합전공","DSC공유대학"];
   const bt = D3.byType;
+  const sum = (arr,i)=>arr.reduce((a,x)=>a+x[i],0);
+  const byDesc = (x,y) => (y.vals.reduce((p,q)=>p+q,0)) - (x.vals.reduce((p,q)=>p+q,0)) || x.label.localeCompare(y.label,"ko");
+  const fusionTotal = Object.values(bt).reduce((a,t)=>a+t.total,0);
   const kpi = [["복수전공 이수자","복수전공", D3.kpi["복수전공"].total],
                ["부전공 이수자","부전공", D3.kpi["부전공"].total],
-               ["융합전공 계 이수자","융합계", Object.values(bt).reduce((a,t)=>a+t.total,0)]];
-  const rows = TYPES.map(t => {
-    const d = bt[t];
-    if (!d) return {t, off:true};
-    return {t, n:d.programs.length, p:d.total, avg:(d.total/d.programs.length)};
-  });
+               ["융합전공 계 이수자","융합계", fusionTotal]];
+  const rows = TYPES.map(t => { const d = bt[t];
+    return d ? {t, n:d.programs.length, p:d.total, avg:d.total/d.programs.length} : {t, off:true}; });
+
   card.innerHTML = `
     <div class="head"><h2><span>03</span>${CONFIG.d3.title}</h2><div class="basis">${CONFIG.d3.basis}</div></div>
-    <div class="kpis">${kpi.map(k=>`<div class="kpi click" tabindex="0" role="button" data-key="k:${k[1]}">
+    <div class="kpis">${kpi.map(k=>`<div class="kpi click" tabindex="0" role="button" data-view="${k[1]}">
         <div class="label">${k[0]}<span class="caret">▸</span></div><div class="num">${fmt(k[2])}</div></div>`).join("")}</div>
-    <div class="sub">융합전공 유형별</div>
-    <p class="hint">▸ 숫자나 유형(행)을 클릭하면 상세 정보가 표시됩니다</p>
+    <p class="hint" id="viewhint"></p>
+    <div id="chart3"></div>
+    <div class="sub" style="margin-top:30px">융합전공 유형별 이수자</div>
+    <p class="hint">▸ 유형(행)을 클릭하면 전공별·대학별·학과별 상세가 표시됩니다</p>
     <table class="main">
       <tr><th>유형</th><th>프로그램(개)</th><th>이수자(명)</th><th>프로그램당 평균(명)</th></tr>
       ${rows.map(r => r.off
@@ -257,39 +260,63 @@ function wire(card, panel, render) {
     <div class="note"><p>2026학년도 1학기 융복합창의전공 이수자 명부(2026.8.19. 기준 재학 538명·휴학 23명, 계 561건) · 교직 복수전공은 별도 명부로 미포함 · 융합전공 계는 복수·부전공 이수자와 중복 포함 · 프로그램은 이수자가 있는 전공 수 · 유형은 학사운영 지침 별표 및 이수학과 기준 · 2학기 선발자는 이수자 미확정으로 제외</p>
     <p>상세: 이수자 명부를 집계한 값이며 학생 단위 정보는 표시하지 않습니다. 「주전공」은 이수자가 원래 소속된 학과(부)입니다.</p></div>`;
 
-  const sum = (arr,i)=>arr.reduce((a,x)=>a+x[i],0);
-  function render(key) {
-    const [kind, name] = key.split(":");
-    if (kind === "t") {
-      const d = bt[name];
-      return `<h3>${name} 상세</h3>
-        <p class="lead">프로그램 ${d.programs.length}개 · 이수자 ${d.total}명 (복수전공 ${sum(d.programs,1)} · 부전공 ${sum(d.programs,2)})</p>`
-        + section("전공(프로그램)별 이수자", d.programs.map(p=>({label:p[0],vals:[p[1],p[2]]})), SER2, 10)
-        + section("주전공 대학별 분포", d.colleges.map(c=>({label:c[0],vals:[c[1],c[2]]})), SER2, 8)
-        + section("주전공 학과별 분포", d.depts.map(x=>({label:x[1],sub:x[0],vals:[x[2],x[3]]})), SER2, 10);
+  /* ---- 단과대학별 차트 (보기 전환) ---- */
+  const HINT = "대학을 클릭하면 학과별 이수자 수가 표시됩니다";
+  function chartFor(view) {
+    if (view === "복수전공" || view === "부전공") {
+      const k = D3.kpi[view];
+      const items = k.colleges.map(c=>({label:c[0], vals:[c[1]+c[2]],
+        kids:k.depts.filter(d=>d[0]===c[0]).map(d=>({label:d[1],vals:[d[2]]})).sort(byDesc)})).sort(byDesc);
+      return { lead:`${view} 이수자 ${k.total}명을 이수자가 원래 소속된 단과대학(주전공) 기준으로 나눈 값입니다.`,
+               html: section("주전공 단과대학별 "+view+" 이수자", items,
+                 [{name:view,color:view==="복수전공"?COL.a:COL.b}], 6, "", HINT) };
     }
-    const HINT = "▸ 대학을 클릭하면 학과별 이수자 수가 표시됩니다";
-    const byDesc = (x,y) => (y.vals.reduce((p,q)=>p+q,0)) - (x.vals.reduce((p,q)=>p+q,0)) || x.label.localeCompare(y.label,"ko");
-    if (name === "융합계") {
+    if (view === "융합계") {
       const m = {}, dm = {};
       Object.values(bt).forEach(t=>{
         t.colleges.forEach(c=>{ m[c[0]]=m[c[0]]||[0,0]; m[c[0]][0]+=c[1]; m[c[0]][1]+=c[2]; });
         t.depts.forEach(d=>{ const key=d[0]+"|"+d[1]; dm[key]=dm[key]||[d[0],d[1],0,0]; dm[key][2]+=d[2]; dm[key][3]+=d[3]; });
       });
-      const cl = Object.entries(m).map(([k,v])=>({label:k, vals:v,
-        kids:Object.values(dm).filter(d=>d[0]===k).map(d=>({label:d[1],vals:[d[2],d[3]]})).sort(byDesc)}))
-        .sort(byDesc);
-      const byT = TYPES.filter(t=>bt[t]).map(t=>({label:t,vals:[sum(bt[t].programs,1),sum(bt[t].programs,2)]}));
-      return `<h3>융합전공 계 상세</h3><p class="lead">연계·자기설계·융합·DSC공유대학 이수 ${kpi[2][2]}명 (복수·부전공 이수자와 중복 포함)</p>`
-        + section("유형별 이수자", byT, SER2)
-        + section("주전공 대학별 분포", cl, SER2, 8, "", HINT);
+      const items = Object.entries(m).map(([k,v])=>({label:k, vals:v,
+        kids:Object.values(dm).filter(d=>d[0]===k).map(d=>({label:d[1],vals:[d[2],d[3]]})).sort(byDesc)})).sort(byDesc);
+      return { lead:`연계·자기설계·융합·DSC공유대학 이수 ${fusionTotal}명 (복수·부전공 이수자와 중복 포함)을 주전공 단과대학별로 나눈 값입니다.`,
+               html: section("주전공 단과대학별 융합전공 이수자", items, SER2, 6, "", HINT) };
     }
-    const k = D3.kpi[name];
-    const col1 = [{name:name,color:name==="복수전공"?COL.a:COL.b}];
-    const cl = k.colleges.map(c=>({label:c[0], vals:[c[1]+c[2]],
-      kids:k.depts.filter(d=>d[0]===c[0]).map(d=>({label:d[1],vals:[d[2]]})).sort(byDesc)})).sort(byDesc);
-    return `<h3>${name} 이수자 상세</h3><p class="lead">일반 학과(부) 이수를 포함한 ${name} 이수자 ${k.total}명 · 주전공(원래 소속) 기준</p>`
-      + section("주전공 대학별 분포", cl, col1, 0, "", HINT);
+    // 기본: 복수전공 vs 부전공 비교
+    const dep = {};
+    ["복수전공","부전공"].forEach((kind,idx)=>D3.kpi[kind].depts.forEach(d=>{
+      const key=d[0]+"|"+d[1]; dep[key]=dep[key]||[d[0],d[1],0,0]; dep[key][2+idx]+=d[2]; }));
+    const items = D3.allColleges.map(c=>({label:c[0], vals:[c[1],c[2]],
+      kids:Object.values(dep).filter(d=>d[0]===c[0]).map(d=>({label:d[1],vals:[d[2],d[3]]})).sort(byDesc)})).sort(byDesc);
+    const cnt = items.reduce((a,it)=>a+it.vals[0]+it.vals[1],0);
+    return { lead:`복수전공 ${D3.kpi["복수전공"].total} + 부전공 ${D3.kpi["부전공"].total} = 계 ${cnt}건을 주전공 단과대학별로 비교한 값입니다.`,
+             html: section("주전공 단과대학별 이수자 · 복수전공 vs 부전공", items, SER2, 6, "", HINT) };
+  }
+  let cur = "both";
+  const box = card.querySelector("#chart3"), vh = card.querySelector("#viewhint");
+  function draw() {
+    const c = chartFor(cur);
+    box.innerHTML = `<p class="lead" style="margin:0 0 8px">${c.lead}</p>` + c.html;
+    box.querySelectorAll("[data-more]").forEach(b => b.dataset.label = b.textContent);
+    card.querySelectorAll(".kpi").forEach(e => e.classList.toggle("sel", e.dataset.view === cur));
+    vh.textContent = cur === "both"
+      ? "▸ 위 숫자를 누르면 해당 항목만 볼 수 있습니다 (복수전공 / 부전공 / 융합전공 계)"
+      : "▸ 선택한 항목만 표시 중 · 같은 숫자를 다시 누르면 복수·부전공 비교로 돌아갑니다";
+  }
+  card.addEventListener("click", ev => {
+    const el = ev.target.closest("[data-view]"); if (!el) return;
+    cur = (cur === el.dataset.view) ? "both" : el.dataset.view; draw();
+  });
+  draw();
+
+  /* ---- 유형 상세 패널 ---- */
+  function render(key) {
+    const name = key.split(":")[1], d = bt[name];
+    return `<h3>${name} 상세</h3>
+      <p class="lead">프로그램 ${d.programs.length}개 · 이수자 ${d.total}명 (복수전공 ${sum(d.programs,1)} · 부전공 ${sum(d.programs,2)})</p>`
+      + section("전공(프로그램)별 이수자", d.programs.map(p=>({label:p[0],vals:[p[1],p[2]]})), SER2, 10)
+      + section("주전공 대학별 분포", d.colleges.map(c=>({label:c[0],vals:[c[1],c[2]]})), SER2, 8)
+      + section("주전공 학과별 분포", d.depts.map(x=>({label:x[1],sub:x[0],vals:[x[2],x[3]]})), SER2, 10);
   }
   wire(card, card.querySelector("#d3"), render);
 })();
