@@ -52,8 +52,19 @@
   .legend { color:#bbb; font-size:22px; margin-bottom:6px; }
   .legend i { display:inline-block; width:16px; height:16px; margin:0 6px 0 0; vertical-align:-1px; border-radius:2px; }
   .legend i.g { background:var(--grey); } .legend i.b { background:var(--blue); margin-left:10px; }
-  .bars .row { display:grid; grid-template-columns:300px 1fr 150px; align-items:center; height:52px;
-               font-size:22px; padding:0 8px; border-radius:10px; }
+  .bars .row { display:grid; grid-template-columns:290px 1fr 170px; align-items:center; min-height:66px;
+               font-size:22px; padding:4px 8px; border-radius:10px; --gapbg:var(--card); }
+  .bars .row.click:hover { --gapbg:#222; } .bars .row.active { --gapbg:#1f2a3d; }
+  .bars .val .done { color:#6aa5ff; font-size:30px; font-weight:800; }
+  .bars .val .of { color:var(--mute); font-size:19px; font-weight:400; }
+  .bars .val small { display:block; color:#7e8794; font-size:14px; font-weight:400; margin-top:-2px; }
+  .brk-track { display:flex; align-items:center; }
+  .seg { position:relative; height:24px; } .seg.s1 { flex:0 0 48%; } .seg.s2 { flex:1 1 auto; }
+  .brk { flex:0 0 14px; height:34px; background:var(--gapbg); transform:skewX(-24deg);
+         border-left:2px solid #b5bcc9; border-right:2px solid #b5bcc9; margin:0 3px; }
+  .brknote { margin-left:18px; font-size:16px; color:#8b93a1; }
+  .brknote .zz { display:inline-block; width:8px; height:15px; margin:0 6px 0 0; vertical-align:-3px;
+                 transform:skewX(-24deg); border-left:2px solid #b5bcc9; border-right:2px solid #b5bcc9; background:none; border-radius:0; }
   .bars .name { font-weight:700; }
   .track { position:relative; height:24px; }
   .grey, .blue { position:absolute; left:0; top:0; height:24px; border-radius:3px; }
@@ -120,7 +131,8 @@
     .kpi .num small { font-size:21px; } .kpi .rate { font-size:17px; }
     .sub, .legend { font-size:19px; } .hint { font-size:15px; }
     table.main { font-size:19px; } table.main th { font-size:16px; padding:12px 6px; } table.main td { padding:16px 6px; }
-    .bars .row { grid-template-columns:200px 1fr 120px; font-size:18px; height:48px; }
+    .bars .row { grid-template-columns:208px 1fr 132px; font-size:17px; min-height:60px; } .bars .name { white-space:nowrap; }
+    .bars .val .done { font-size:26px; } .bars .val .of { font-size:16px; } .brknote { display:block; margin:4px 0 0; font-size:14px; }
     .note { font-size:14px; } .detail { padding:20px; }
     .detail h3 { font-size:20px; } .detail .lead { font-size:16px; }
     .srow { grid-template-columns:minmax(100px,164px) 1fr 152px; font-size:16px; } .srow .v b { font-size:17px; } .srow .v small { white-space:nowrap; font-size:13px; }
@@ -135,7 +147,7 @@
     .kpi .label { font-size:16px; } .kpi .num { font-size:38px; } .kpi .num .unit { font-size:22px; } .kpi .num small { font-size:18px; }
     .kpis { gap:14px 28px; } .sub, .legend { font-size:17px; }
     table.main { font-size:16px; } table.main th { padding:10px 4px; font-size:14px; } table.main td { padding:14px 4px; }
-    .bars .row { grid-template-columns:1fr; height:auto; padding:8px; gap:4px; font-size:17px; }
+    .bars .row { grid-template-columns:1fr; min-height:0; padding:8px; gap:4px; font-size:17px; }
     .bars .val { text-align:left; }
     .note { font-size:14px; } .detail { padding:16px 14px; }
     .srow { grid-template-columns:1fr; gap:3px; } .srow .v { text-align:left; }
@@ -336,7 +348,18 @@ function wire(card, panel, render) {
   const K = CONFIG.d4, cats = D4.cats;
   const run = cats.reduce((a,c)=>a+c[1],0), setup = cats.reduce((a,c)=>a+c[2],0);
   const rate = (K.completers / K.participants * 100).toFixed(1);
-  const maxP = Math.max(...cats.map(c=>c[4])), W = 88;
+  const maxP = Math.max(...cats.map(c=>c[4]));
+  const maxDone = Math.max(...cats.map(c=>c[3]));
+  const BRK = Math.ceil(maxDone * 1.15 / 50) * 50;      // 막대 앞 구간(이수자 눈금)의 끝값 — 이 값 뒤는 생략선 이후 구간
+  const brkBar = c => {
+    const s1grey = Math.min(c[4], BRK) / BRK * 100;                        // 앞 구간: 참여 학생(회색)
+    const blue   = c[3] / BRK * 100;                                         // 앞 구간: 이수자(파랑)
+    const s2grey = Math.max(0, c[4] - BRK) / Math.max(1, maxP - BRK) * 100;  // 뒤 구간: 참여 학생 나머지
+    return `<div class="track brk-track">
+      <div class="seg s1"><div class="grey" style="width:${s1grey}%"></div><div class="blue" style="width:${blue}%"></div></div>
+      <div class="brk"></div>
+      <div class="seg s2"><div class="grey" style="width:${s2grey}%"></div></div></div>`;
+  };
   // 상위 10위까지(동점은 모두 포함, 동점은 같은 순위)
   const ranked = D4.courses.filter(c=>c.c26>0).sort((a,b)=>b.c26-a.c26||b.cum-a.cum||a.no-b.no);
   let topRows = ranked.map((c,i)=>({...c, rank: 1+ranked.filter(x=>x.c26>c.c26).length}));
@@ -351,13 +374,14 @@ function wire(card, panel, render) {
         <div class="num">${K.completers}<span class="unit">명</span> <small>/ ${K.cases}건</small></div>
         <div class="rate">이수율 ${rate}% (학생 기준)</div></div>
     </div>
-    <div class="legend"><i class="g"></i>참여 학생<i class="b"></i>이수자</div>
+    <div class="legend"><i class="g"></i>참여 학생<i class="b"></i>이수자<span class="brknote"><i class="zz"></i>막대 중간 생략 (앞 구간 0~${BRK}명 / 뒤 구간 ${BRK}명~${fmt(maxP)}명)</span></div>
     <p class="hint">▸ 이수자 숫자나 분류(막대)를 클릭하면 상세 정보가 표시됩니다</p>
     <div class="bars">${cats.map(c=>`
       <div class="row click" tabindex="0" role="button" data-key="c:${c[0]}">
         <div class="name">${c[0]} (${c[1]}/${c[2]}개)<span class="caret">▸</span></div>
-        <div class="track"><div class="grey" style="width:${c[4]/maxP*W}%"></div><div class="blue" style="width:${c[3]/maxP*W}%"></div></div>
-        <div class="val">${c[3]} / ${fmt(c[4])}</div></div>`).join("")}</div>
+        ${brkBar(c)}
+        <div class="val"><span class="done">${c[3]}</span><span class="of"> / ${fmt(c[4])}</span>
+          <small>이수율 ${(c[3]/c[4]*100).toFixed(1)}%</small></div></div>`).join("")}</div>
     <div class="sub" style="margin-top:30px">이수자 상위 10개 과정 <span class="subnote">2026-1 이수 건수 기준</span></div>
     <p class="hint">▸ 5위까지 표시합니다 · 이수 건수가 같은 과정은 같은 순위로 표시하며, 나머지는 아래 버튼으로 펼칠 수 있습니다</p>
     <div class="sec" style="margin-top:0">
