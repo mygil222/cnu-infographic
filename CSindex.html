@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>충남대학교 다전공·마이크로디그리 현황</title>
+<style>
+  :root { --bg:#0f0f0f; --card:#1a1a1a; --line:#333; --text:#e8e8e8; --mute:#999; --dim:#888;
+          --blue:#3b82f6; --teal:#2dd4bf; --grey:#4a4a4a; --green:#6ee7a8; --panel:#141414; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); margin:0; padding:40px 16px; display:flex; flex-direction:column;
+         align-items:center; gap:28px; color:var(--text);
+         font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; }
+  .card { width:100%; max-width:920px; background:var(--card); border:1px solid var(--line);
+          border-radius:24px; padding:44px; }
+  .head { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+  .head h2 { margin:0; font-size:30px; }
+  .head h2 span { color:var(--dim); font-size:24px; margin-right:12px; font-weight:400; }
+  .head .basis { color:var(--mute); font-size:20px; }
+  .kpis { display:flex; gap:20px 56px; margin:32px 0 30px; flex-wrap:wrap; }
+  .kpi { padding:8px 12px; margin:-8px -12px; border-radius:12px; }
+  .kpi .label { color:var(--mute); font-size:22px; }
+  .kpi .num { font-family:Georgia,serif; font-size:52px; line-height:1.15; }
+  .kpi .num small { font-size:26px; color:var(--mute); }
+  .kpi .num .unit { font-size:30px; }
+  .kpi .rate { color:var(--green); font-size:20px; margin-top:2px; }
+  .click { cursor:pointer; transition:background .15s; }
+  .click:hover { background:#222; }
+  .click:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+  .click.active { background:#1f2a3d; }
+  .caret { color:var(--blue); font-size:16px; margin-left:8px; display:inline-block; transition:transform .15s; }
+  .active .caret { transform:rotate(90deg); }
+  .hint { color:#6b8fd6; font-size:17px; margin:0 0 12px; }
+  .sub { color:var(--mute); font-size:22px; margin-bottom:6px; }
+  table.main { width:100%; border-collapse:collapse; font-size:22px; }
+  table.main th { color:var(--mute); font-weight:400; text-align:right; padding:14px 8px; border-bottom:1px solid #444; }
+  table.main td { text-align:right; padding:20px 8px; border-bottom:1px solid var(--line); }
+  table.main th:first-child, table.main td:first-child { text-align:left; }
+  table.main td:first-child { font-weight:700; }
+  table.main tr.click:hover td, table.main tr.click.active td { background:inherit; }
+  table.main tr.click:hover { background:#222; } table.main tr.click.active { background:#1f2a3d; }
+  table.main tr.off { opacity:.7; }
+  .legend { color:#bbb; font-size:22px; margin-bottom:6px; }
+  .legend i { display:inline-block; width:16px; height:16px; margin:0 6px 0 0; vertical-align:-1px; border-radius:2px; }
+  .legend i.g { background:var(--grey); } .legend i.b { background:var(--blue); margin-left:10px; }
+  .bars .row { display:grid; grid-template-columns:300px 1fr 150px; align-items:center; height:52px;
+               font-size:22px; padding:0 8px; border-radius:10px; }
+  .bars .name { font-weight:700; }
+  .track { position:relative; height:24px; }
+  .grey, .blue { position:absolute; left:0; top:0; height:24px; border-radius:3px; }
+  .grey { background:var(--grey); } .blue { background:var(--blue); border-radius:3px 0 0 3px; min-width:4px; }
+  .bars .val { text-align:right; font-weight:700; }
+  .note { color:var(--dim); font-size:17px; line-height:1.7; margin-top:22px; }
+  .note p { margin:0 0 4px; }
+
+  .detail { margin-top:18px; background:var(--panel); border:1px solid #2a3550; border-radius:16px;
+            padding:24px 26px; display:none; }
+  .detail.open { display:block; animation:fade .2s; }
+  @keyframes fade { from{opacity:0; transform:translateY(-4px)} to{opacity:1; transform:none} }
+  .detail h3 { margin:0 0 4px; font-size:22px; }
+  .detail .lead { color:var(--mute); font-size:18px; margin:0 0 16px; line-height:1.6; }
+  .detail .close { float:right; background:none; border:1px solid #444; color:var(--mute);
+                   border-radius:8px; padding:4px 12px; font-size:16px; cursor:pointer; }
+  .detail .close:hover { color:#fff; border-color:#888; }
+  .sec { margin-top:22px; }
+  .sec h4 { margin:0 0 8px; font-size:19px; color:#cfd6e4; font-weight:700; }
+  .sec h4 .lg { font-weight:400; font-size:16px; color:var(--mute); margin-left:10px; }
+  .sec h4 .lg i { display:inline-block; width:11px; height:11px; border-radius:2px; margin:0 4px 0 8px; vertical-align:0; }
+  .srow { display:grid; grid-template-columns:minmax(120px,230px) 1fr 150px; align-items:center;
+          gap:10px; padding:5px 0; font-size:18px; }
+  .srow .lb { overflow:hidden; text-overflow:ellipsis; }
+  .srow .lb small { color:var(--dim); display:block; font-size:14px; }
+  .stack { display:flex; height:16px; background:#222; border-radius:3px; overflow:hidden; }
+  .stack span { display:block; height:100%; }
+  .srow .v { text-align:right; font-size:17px; } .srow .v b { font-size:19px; }
+  .srow .v small { color:var(--dim); display:block; font-size:14px; }
+  .sec:not(.all) .extra { display:none; }
+  .more { margin-top:8px; background:none; border:1px solid #3a4560; color:#8fb0f0; border-radius:8px;
+          padding:6px 14px; font-size:16px; cursor:pointer; }
+  .more:hover { background:#1f2a3d; }
+  .scroll { max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:10px; }
+  table.sm { width:100%; border-collapse:collapse; font-size:17px; }
+  table.sm th { position:sticky; top:0; background:#202020; color:var(--mute); font-weight:400; text-align:right;
+                padding:10px 10px; border-bottom:1px solid #444; }
+  table.sm td { padding:9px 10px; border-bottom:1px solid #262626; text-align:right; }
+  table.sm th:first-child, table.sm td:first-child { text-align:left; }
+  table.sm td:first-child { width:52%; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; background:var(--green); }
+  .dot.no { background:transparent; border:1px solid #777; }
+  .zero { color:#666; }
+  .footer { color:#666; font-size:14px; text-align:center; max-width:920px; }
+
+  @media (max-width:720px) {
+    body { padding:20px 10px; }
+    .card { padding:24px 18px; border-radius:18px; }
+    .head h2 { font-size:24px; } .head .basis { font-size:15px; }
+    .kpi .label { font-size:16px; } .kpi .num { font-size:38px; } .kpi .num .unit { font-size:22px; } .kpi .num small { font-size:18px; }
+    .kpis { gap:14px 28px; } .sub, .legend { font-size:17px; }
+    table.main { font-size:16px; } table.main th { padding:10px 4px; font-size:14px; } table.main td { padding:14px 4px; }
+    .bars .row { grid-template-columns:1fr; height:auto; padding:8px; gap:4px; font-size:17px; }
+    .bars .val { text-align:left; }
+    .note { font-size:14px; } .detail { padding:16px 14px; }
+    .srow { grid-template-columns:1fr; gap:3px; } .srow .v { text-align:left; }
+    table.sm { font-size:14px; } table.sm th, table.sm td { padding:8px 6px; }
+    table.sm th:not(:first-child), table.sm td:not(:first-child) { white-space:nowrap; }
+    table.sm td:first-child { width:auto; }
+    .sec h4 .lg { display:block; margin:4px 0 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card" id="c3"></div>
+<div class="card" id="c4"></div>
+<div class="footer">집계 자료만 표시합니다 (학번·성명 등 개인정보 미포함)</div>
+
+<script>
+/* ============================================================
+   ★ 숫자 수정 안내
+   - D3 : 03 다전공 현황 (근거표 '이수자명부' 집계값)
+   - D4 : 04 마이크로디그리 현황 (04-5 분류파일 + 04-2 성과분석보고서 집계값)
+   - CONFIG : 보고서·엑셀에서 직접 계산되지 않는 값 (참여 학생 등)
+   ============================================================ */
+const CONFIG = {
+  d3: { title:"다전공 현황", basis:"2026학년도 1학기 이수 (8.19. 기준)" },
+  d4: { title:"마이크로디그리 현황", basis:"2026학년도 누적 · 2026.10. 기준",
+        participants:10394,   // 참여 학생(고유 학번) — 원본 집계 파일로 재확인 필요
+        completers:351,       // 2026-1 이수 학생 수
+        cases:432,            // 2026-1 이수 건수
+        cumulative:2707 }     // 설치 이후 누적 이수 건수
+};
+const D3 = {"byType": {"연계전공": {"total": 70, "programs": [["과채·특용작물영농창업", 17, 0, 17], ["지식재산융합전공", 10, 6, 16], ["창업경영학", 4, 5, 9], ["아시아비즈니스", 2, 2, 4], ["지식생태", 4, 0, 4], ["인문사회디지털융합전공", 2, 1, 3], ["인문콘텐츠", 3, 0, 3], ["패션AI", 3, 0, 3], ["바이오AI융합", 0, 2, 2], ["언어정보처리", 1, 1, 2], ["중국통상", 2, 0, 2], ["감성인지소프트웨어", 1, 0, 1], ["목조건축및인테리어디자인", 1, 0, 1], ["스마트이트레이드", 0, 1, 1], ["융합푸드시스템", 0, 1, 1], ["항공우주안보학", 1, 0, 1]], "colleges": [["농업생명과학대학", 19, 4, 23], ["인문대학", 9, 5, 14], ["사회과학대학", 6, 3, 9], ["자연과학대학", 3, 3, 6], ["공과대학", 3, 2, 5], ["생활과학대학", 4, 1, 5], ["경상대학", 3, 0, 3], ["국가안보융합학부", 2, 0, 2], ["사범대학", 1, 1, 2], ["예술대학", 1, 0, 1]], "depts": [["농업생명과학대학", "생물환경화학과", 5, 0, 5], ["농업생명과학대학", "원예학과", 5, 0, 5], ["인문대학", "중어중문학과", 4, 1, 5], ["농업생명과학대학", "농업경제학과", 4, 0, 4], ["사회과학대학", "문헌정보학과", 4, 0, 4], ["농업생명과학대학", "응용생물학과", 1, 2, 3], ["사회과학대학", "행정학부", 1, 2, 3], ["생활과학대학", "의류학과", 3, 0, 3], ["인문대학", "언어학과", 2, 1, 3], ["경상대학", "경영학부", 2, 0, 2], ["공과대학", "스마트시티건축공학과", 1, 1, 2], ["공과대학", "인공지능학과", 1, 1, 2], ["농업생명과학대학", "식물자원학과", 1, 1, 2], ["농업생명과학대학", "지역환경토목학과", 1, 1, 2], ["인문대학", "영어영문학과", 0, 2, 2], ["자연과학대학", "물리학과", 1, 1, 2], ["자연과학대학", "수학과", 1, 1, 2], ["경상대학", "무역학과", 1, 0, 1], ["공과대학", "컴퓨터융합학부", 1, 0, 1], ["국가안보융합학부", "국토안보학", 1, 0, 1], ["국가안보융합학부", "해양안보학", 1, 0, 1], ["농업생명과학대학", "스마트농업시스템기계공학과", 1, 0, 1], ["농업생명과학대학", "환경소재공학과", 1, 0, 1], ["사범대학", "기술교육과", 0, 1, 1], ["사범대학", "전기·전자·통신공학교육과", 1, 0, 1], ["사회과학대학", "사회학과", 0, 1, 1], ["사회과학대학", "심리학과", 1, 0, 1], ["생활과학대학", "소비자학과", 1, 0, 1], ["생활과학대학", "식품영양학과", 0, 1, 1], ["예술대학", "음악과", 1, 0, 1], ["인문대학", "국사학과", 1, 0, 1], ["인문대학", "국어국문학과", 1, 0, 1], ["인문대학", "독어독문학과", 1, 0, 1], ["인문대학", "한문학과", 0, 1, 1], ["자연과학대학", "스포츠과학과", 1, 0, 1], ["자연과학대학", "지질환경과학과", 0, 1, 1]]}, "자기설계전공": {"total": 6, "programs": [["스포츠심리상담", 5, 1, 6]], "colleges": [["인문대학", 1, 1, 2], ["자연과학대학", 2, 0, 2], ["사범대학", 1, 0, 1], ["생활과학대학", 1, 0, 1]], "depts": [["자연과학대학", "스포츠과학과", 2, 0, 2], ["사범대학", "국어교육과", 1, 0, 1], ["생활과학대학", "식품영양학과", 1, 0, 1], ["인문대학", "독어독문학과", 0, 1, 1], ["인문대학", "사학과", 1, 0, 1]]}, "융합전공": {"total": 90, "programs": [["사이버보안", 20, 20, 40], ["바이오의약품실무", 10, 7, 17], ["컴퓨터응용", 6, 6, 12], ["클라우드", 3, 7, 10], ["블록체인", 4, 5, 9], ["개인정보보호", 0, 1, 1], ["디지털그린바이오소재", 0, 1, 1]], "colleges": [["공과대학", 26, 40, 66], ["농업생명과학대학", 4, 3, 7], ["생명시스템과학대학", 1, 3, 4], ["경상대학", 3, 0, 3], ["국가안보융합학부", 2, 0, 2], ["사범대학", 2, 0, 2], ["생활과학대학", 1, 1, 2], ["자연과학대학", 2, 0, 2], ["인문대학", 1, 0, 1], ["자유전공학부", 1, 0, 1]], "depts": [["공과대학", "컴퓨터융합학부", 15, 28, 43], ["공과대학", "인공지능학과", 0, 6, 6], ["공과대학", "자율운항시스템공학과", 0, 5, 5], ["농업생명과학대학", "식품공학과", 3, 2, 5], ["공과대학", "응용화학공학과", 4, 0, 4], ["공과대학", "정보통신융합학부", 4, 0, 4], ["경상대학", "경제학과", 2, 0, 2], ["공과대학", "전파정보통신공학과", 1, 1, 2], ["국가안보융합학부", "국토안보학", 2, 0, 2], ["사범대학", "기계공학교육과", 2, 0, 2], ["생명시스템과학대학", "미생물·분자생명과학과", 1, 1, 2], ["생활과학대학", "식품영양학과", 1, 1, 2], ["자연과학대학", "수학과", 2, 0, 2], ["경상대학", "경영학부", 1, 0, 1], ["공과대학", "선박해양공학과", 1, 0, 1], ["공과대학", "전자공학과", 1, 0, 1], ["농업생명과학대학", "식물자원학과", 1, 0, 1], ["농업생명과학대학", "응용생물학과", 0, 1, 1], ["생명시스템과학대학", "생명정보융합학과", 0, 1, 1], ["생명시스템과학대학", "생물과학과", 0, 1, 1], ["인문대학", "국어국문학과", 1, 0, 1], ["자유전공학부", "리더십과 조직과학", 1, 0, 1]]}, "DSC공유대학": {"total": 11, "programs": [["미래모빌리티융합전공", 9, 0, 9], ["바이오헬스융합전공", 2, 0, 2]], "colleges": [["공과대학", 8, 0, 8], ["경상대학", 1, 0, 1], ["농업생명과학대학", 1, 0, 1], ["사범대학", 1, 0, 1]], "depts": [["공과대학", "자율운항시스템공학과", 4, 0, 4], ["공과대학", "전파정보통신공학과", 3, 0, 3], ["경상대학", "경영학부", 1, 0, 1], ["공과대학", "응용화학공학과", 1, 0, 1], ["농업생명과학대학", "바이오시스템기계공학과", 1, 0, 1], ["사범대학", "건설공학교육과", 1, 0, 1]]}}, "kpi": {"복수전공": {"total": 417, "colleges": [["인문대학", 130, 0, 130], ["공과대학", 51, 0, 51], ["농업생명과학대학", 45, 0, 45], ["자연과학대학", 45, 0, 45], ["사회과학대학", 40, 0, 40], ["경상대학", 27, 0, 27], ["국가안보융합학부", 24, 0, 24], ["사범대학", 18, 0, 18], ["생활과학대학", 18, 0, 18], ["자유전공학부", 6, 0, 6], ["생명시스템과학대학", 5, 0, 5], ["지식융합학부", 4, 0, 4], ["예술대학", 3, 0, 3], ["국제학부", 1, 0, 1]]}, "부전공": {"total": 144, "colleges": [["공과대학", 0, 47, 47], ["사회과학대학", 0, 19, 19], ["인문대학", 0, 19, 19], ["자연과학대학", 0, 19, 19], ["농업생명과학대학", 0, 16, 16], ["경상대학", 0, 7, 7], ["생활과학대학", 0, 5, 5], ["생명시스템과학대학", 0, 4, 4], ["국제학부", 0, 3, 3], ["사범대학", 0, 2, 2], ["국가안보융합학부", 0, 1, 1], ["예술대학", 0, 1, 1], ["자유전공학부", 0, 1, 1]]}, "융합전공계": {"total": 177}}, "allColleges": [["인문대학", 130, 19, 149], ["공과대학", 51, 47, 98], ["자연과학대학", 45, 19, 64], ["농업생명과학대학", 45, 16, 61], ["사회과학대학", 40, 19, 59], ["경상대학", 27, 7, 34], ["국가안보융합학부", 24, 1, 25], ["생활과학대학", 18, 5, 23], ["사범대학", 18, 2, 20], ["생명시스템과학대학", 5, 4, 9], ["자유전공학부", 6, 1, 7], ["국제학부", 1, 3, 4], ["예술대학", 3, 1, 4], ["지식융합학부", 4, 0, 4]]};
+const D4 = {"courses": [{"no": 4, "name": "사회조사 · 데이터분석전문과정", "cat": "AI·데이터", "run": true, "c26": 6, "cum": 37}, {"no": 5, "name": "인공지능기본과정", "cat": "AI·데이터", "run": true, "c26": 8, "cum": 29}, {"no": 12, "name": "경제데이터 실무이해과정", "cat": "AI·데이터", "run": true, "c26": 62, "cum": 289}, {"no": 20, "name": "무역 데이터분석 전문가 양성과정", "cat": "AI·데이터", "run": true, "c26": 16, "cum": 48}, {"no": 33, "name": "음성음향 데이터 분석 및 통계 과정", "cat": "AI·데이터", "run": true, "c26": 5, "cum": 25}, {"no": 34, "name": "데이터큐레이션 전문가 과정", "cat": "AI·데이터", "run": true, "c26": 4, "cum": 45}, {"no": 54, "name": "패션 빅데이터 분석 전문가 양성 과정", "cat": "AI·데이터", "run": true, "c26": 4, "cum": 19}, {"no": 67, "name": "자연언어 이해 인공지능 전문가 과정", "cat": "AI·데이터", "run": true, "c26": 1, "cum": 3}, {"no": 82, "name": "사이버보안개발자 양성 과정", "cat": "AI·데이터", "run": true, "c26": 22, "cum": 154}, {"no": 91, "name": "경제통계분석 전문가 과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 108, "name": "블록체인 프로그래밍 입문 과정", "cat": "AI·데이터", "run": true, "c26": 1, "cum": 1}, {"no": 109, "name": "블록체인 디지털자산 기술 과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 110, "name": "블록체인 산업 응용 과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 111, "name": "데이터 보안 기술 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 112, "name": "사이버보안 대응 실무자 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 113, "name": "데이터보안기술 활용 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 114, "name": "개인정보보호기술 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 115, "name": "개인정보보호정책 및 관리 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 116, "name": "클라우드 서비스 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 117, "name": "클라우드 운영 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 118, "name": "클라우드 기술 개발자 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 119, "name": "데이터 보안 기초 과정", "cat": "AI·데이터", "run": false, "c26": 3, "cum": 3}, {"no": 120, "name": "데이터 활용 기초 과정", "cat": "AI·데이터", "run": true, "c26": 2, "cum": 2}, {"no": 121, "name": "클라우드 보안 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 122, "name": "블록체인 개인정보보호 융합 실무자 과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 128, "name": "AI 윤리 인재양성 과정", "cat": "AI·데이터", "run": true, "c26": 3, "cum": 3}, {"no": 133, "name": "디지털 문화와 인공지능에 대한 비판적 이해 과정", "cat": "AI·데이터", "run": true, "c26": 1, "cum": 1}, {"no": 148, "name": "블록체인 컴퓨팅기술 산업 연계자 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 149, "name": "소프트웨어 AI 보안 융합 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 162, "name": "AI경영 애널리틱스․전략 과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 163, "name": "컴퓨터응용 입문 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 164, "name": "컴퓨터응용 실무 과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 165, "name": "데이터 보안 기술 응용 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 166, "name": "개인정보전략 및 설계 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 174, "name": "AI 윤리 입문 과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 178, "name": "AI시스템입문과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 179, "name": "데이터AI전문과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 180, "name": "생성형AI전문과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 181, "name": "온디바이스AI전문과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 186, "name": "AI 기반 영어교사 양성과정", "cat": "AI·데이터", "run": false, "c26": 0, "cum": 0}, {"no": 187, "name": "AI 수학교육활용과정", "cat": "AI·데이터", "run": true, "c26": 0, "cum": 0}, {"no": 3, "name": "방위산업과정", "cat": "공학·기술", "run": true, "c26": 2, "cum": 15}, {"no": 10, "name": "나노시스템반도체과정", "cat": "공학·기술", "run": true, "c26": 0, "cum": 0}, {"no": 13, "name": "차세대에너지공학과정", "cat": "공학·기술", "run": false, "c26": 0, "cum": 10}, {"no": 14, "name": "스마트철도교통과정", "cat": "공학·기술", "run": true, "c26": 8, "cum": 32}, {"no": 19, "name": "반도체-에너지 융합과학과정", "cat": "공학·기술", "run": true, "c26": 1, "cum": 25}, {"no": 21, "name": "디지털물산업 기본과정", "cat": "공학·기술", "run": true, "c26": 10, "cum": 88}, {"no": 22, "name": "디지털물산업 심화과정", "cat": "공학·기술", "run": true, "c26": 9, "cum": 77}, {"no": 23, "name": "지능형 반도체 설계 전문과정", "cat": "공학·기술", "run": true, "c26": 7, "cum": 145}, {"no": 24, "name": "초미세 반도체 소자 전문과정", "cat": "공학·기술", "run": true, "c26": 4, "cum": 121}, {"no": 28, "name": "반도체소재분석과정", "cat": "공학·기술", "run": false, "c26": 0, "cum": 0}, {"no": 29, "name": "에너지공정공학과정", "cat": "공학·기술", "run": false, "c26": 0, "cum": 4}, {"no": 30, "name": "에너지소재공학과정", "cat": "공학·기술", "run": false, "c26": 0, "cum": 4}, {"no": 36, "name": "반도체 부품ㆍ장비 설계 전문 교육 과정", "cat": "공학·기술", "run": true, "c26": 7, "cum": 32}, {"no": 37, "name": "반도체 공정ㆍ설비 계측 전문 교육 과정", "cat": "공학·기술", "run": true, "c26": 4, "cum": 18}, {"no": 38, "name": "반도체 소재 및 공정 특화과정", "cat": "공학·기술", "run": true, "c26": 12, "cum": 94}, {"no": 39, "name": "지역혁신 스마트시티 융합인재 양성과정", "cat": "공학·기술", "run": true, "c26": 1, "cum": 12}, {"no": 49, "name": "양자과학기초 과정", "cat": "공학·기술", "run": true, "c26": 6, "cum": 32}, {"no": 50, "name": "이차전지기술 특화 첨단과정", "cat": "공학·기술", "run": true, "c26": 2, "cum": 15}, {"no": 51, "name": "친환경 xEV 공학과정", "cat": "공학·기술", "run": true, "c26": 3, "cum": 13}, {"no": 52, "name": "5G/Beyond 5G 통신전문가 양성과정", "cat": "공학·기술", "run": true, "c26": 0, "cum": 3}, {"no": 56, "name": "모빌리티SW/AI 과정", "cat": "공학·기술", "run": false, "c26": 1, "cum": 26}, {"no": 57, "name": "V2X 통신 과정", "cat": "공학·기술", "run": false, "c26": 0, "cum": 21}, {"no": 58, "name": "디스플레이-시스템반도체 소재부품 과정", "cat": "공학·기술", "run": false, "c26": 0, "cum": 28}, {"no": 59, "name": "모빌리티 데이터사이언스 과정", "cat": "공학·기술", "run": false, "c26": 1, "cum": 3}, {"no": 60, "name": "센서와 에너지 전기화학분석 과정", "cat": "공학·기술", "run": false, "c26": 0, "cum": 0}, {"no": 69, "name": "반도체 장비 과정", "cat": "공학·기술", "run": true, "c26": 4, "cum": 27}, {"no": 70, "name": "반도체 공정 및 소자 과정", "cat": "공학·기술", "run": true, "c26": 4, "cum": 27}, {"no": 71, "name": "반도체 소재 합성 및 응용이해", "cat": "공학·기술", "run": true, "c26": 4, "cum": 25}, {"no": 72, "name": "고체 소재 첨단 기기분석", "cat": "공학·기술", "run": true, "c26": 4, "cum": 25}, {"no": 78, "name": "반도체 소재부품장비 기본 과정", "cat": "공학·기술", "run": true, "c26": 11, "cum": 78}, {"no": 79, "name": "차세대 반도체재료 전문 과정", "cat": "공학·기술", "run": true, "c26": 3, "cum": 36}, {"no": 80, "name": "디지털통신반도체 설계과정", "cat": "공학·기술", "run": true, "c26": 2, "cum": 12}, {"no": 81, "name": "아날로그통신반도체 설계과정", "cat": "공학·기술", "run": true, "c26": 2, "cum": 12}, {"no": 94, "name": "스마트오션모빌리티 과정", "cat": "공학·기술", "run": true, "c26": 1, "cum": 3}, {"no": 107, "name": "반도체비즈니스 과정", "cat": "공학·기술", "run": true, "c26": 0, "cum": 0}, {"no": 175, "name": "반도체 공정기술 과정", "cat": "공학·기술", "run": true, "c26": 0, "cum": 0}, {"no": 176, "name": "시스템 반도체 회로설계 과정", "cat": "공학·기술", "run": true, "c26": 0, "cum": 0}, {"no": 6, "name": "미생물기능분석과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 32}, {"no": 7, "name": "동물생명산업 데이터 분석과정", "cat": "바이오·헬스", "run": false, "c26": 0, "cum": 0}, {"no": 9, "name": "디지털 심리케어 전문과정", "cat": "바이오·헬스", "run": true, "c26": 1, "cum": 11}, {"no": 25, "name": "기후변화 대응 미래 농업환경 전문가 양성과정", "cat": "바이오·헬스", "run": true, "c26": 9, "cum": 66}, {"no": 26, "name": "스마트농업 실무인재 양성과정", "cat": "바이오·헬스", "run": true, "c26": 9, "cum": 34}, {"no": 31, "name": "건강정보관리과정(대학원)", "cat": "바이오·헬스", "run": false, "c26": 0, "cum": 0}, {"no": 41, "name": "생물정보학 기초과정", "cat": "바이오·헬스", "run": true, "c26": 4, "cum": 5}, {"no": 65, "name": "디지털 활용 의사소통장애 전문가 과정", "cat": "바이오·헬스", "run": true, "c26": 2, "cum": 2}, {"no": 83, "name": "수목진료분야 전문가 양성과정", "cat": "바이오·헬스", "run": true, "c26": 8, "cum": 22}, {"no": 85, "name": "질병분석 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 100, "name": "그린바이오 스마트 창업 입문", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 101, "name": "디지털 AI 스마트파밍 입문", "cat": "바이오·헬스", "run": true, "c26": 6, "cum": 25}, {"no": 102, "name": "탄소중립과 바이오비지니스 입문", "cat": "바이오·헬스", "run": true, "c26": 4, "cum": 15}, {"no": 103, "name": "융합푸드시스템 입문", "cat": "바이오·헬스", "run": true, "c26": 11, "cum": 25}, {"no": 104, "name": "지능형 정밀 육종 입문", "cat": "바이오·헬스", "run": true, "c26": 5, "cum": 142}, {"no": 105, "name": "친환경 Ag-Tech  입문", "cat": "바이오·헬스", "run": true, "c26": 5, "cum": 12}, {"no": 106, "name": "에코바이오신소재 입문", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 3}, {"no": 123, "name": "자연치유 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 132, "name": "디지털 헬스기반 Aging 정신건강 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 134, "name": "디지털 AI 스마트파밍 응용 과정", "cat": "바이오·헬스", "run": true, "c26": 1, "cum": 3}, {"no": 135, "name": "디지털 AI 스마트파밍 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 1, "cum": 9}, {"no": 136, "name": "에코바이오신소재 응용 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 137, "name": "에코바이오신소재 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 138, "name": "융합푸드시스템 응용 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 139, "name": "융합푸드시스템 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 140, "name": "지능형 정밀 육종 응용 과정", "cat": "바이오·헬스", "run": true, "c26": 2, "cum": 6}, {"no": 141, "name": "지능형 정밀 육종 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 1}, {"no": 142, "name": "친환경 Ag-Tech 응용 과정", "cat": "바이오·헬스", "run": true, "c26": 2, "cum": 2}, {"no": 143, "name": "친환경 Ag-Tech 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 144, "name": "탄소중립과 바이오비지니스 응용 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 2}, {"no": 145, "name": "탄소중립과 바이오비지니스 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 1, "cum": 2}, {"no": 152, "name": "디지털 그린바이오 테크소재 입문", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 153, "name": "디지털 그린바이오 테크소재 응용", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 154, "name": "그린바이오 에코시스템 입문", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 155, "name": "그린바이오 에코시스템 응용", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 156, "name": "그린바이오 파운드리 입문", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 157, "name": "그린바이오 파운드리 응용", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 158, "name": "그린바이오 스마트파밍 입문", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 159, "name": "그린바이오 스마트파밍 응용", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 160, "name": "의사과학자 기초과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 161, "name": "의사과학자 심화과정", "cat": "바이오·헬스", "run": false, "c26": 0, "cum": 0}, {"no": 169, "name": "디지털 그린바이오 테크소재 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 170, "name": "그린바이오 에코시스템 심화 과정", "cat": "바이오·헬스", "run": false, "c26": 0, "cum": 0}, {"no": 171, "name": "그린바이오 파운드리 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 172, "name": "그린바이오 스마트파밍 심화 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 173, "name": "스마트바이오 웰니스 과정", "cat": "바이오·헬스", "run": false, "c26": 0, "cum": 0}, {"no": 182, "name": "그린바이오 식품제조공정 실무 입문 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 183, "name": "글로벌 그린바이오 소재생산 실무 과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 184, "name": "산림복지전문가과정", "cat": "바이오·헬스", "run": false, "c26": 0, "cum": 0}, {"no": 185, "name": "바이오의약품 인허가 실무과정", "cat": "바이오·헬스", "run": true, "c26": 0, "cum": 0}, {"no": 1, "name": "금융소비자과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 13}, {"no": 2, "name": "생활트렌드 분석과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 3}, {"no": 8, "name": "윤리적소비자과정", "cat": "인문·사회", "run": true, "c26": 4, "cum": 18}, {"no": 11, "name": "공공기관 직무이해과정", "cat": "인문·사회", "run": false, "c26": 1, "cum": 10}, {"no": 15, "name": "산업보안과정", "cat": "인문·사회", "run": true, "c26": 2, "cum": 5}, {"no": 16, "name": "아동ㆍ청소년복지 및 돌봄 전문과정", "cat": "인문·사회", "run": true, "c26": 5, "cum": 38}, {"no": 17, "name": "지역사회 융합혁신 전문과정", "cat": "인문·사회", "run": true, "c26": 6, "cum": 20}, {"no": 18, "name": "의회ㆍ입법인재 양성과정", "cat": "인문·사회", "run": true, "c26": 6, "cum": 35}, {"no": 27, "name": "지식재산 융합인재 양성과정", "cat": "인문·사회", "run": true, "c26": 10, "cum": 78}, {"no": 32, "name": "글쓰기 전문가 과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 4}, {"no": 35, "name": "미중관계와 세계질서 이해과정", "cat": "인문·사회", "run": false, "c26": 2, "cum": 8}, {"no": 40, "name": "공연예술기획 전문가 양성과정", "cat": "인문·사회", "run": true, "c26": 2, "cum": 32}, {"no": 42, "name": "공공리더십 전문 교육과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 43, "name": "지식재산 실무인재 양성과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 2}, {"no": 44, "name": "지식재산 분석인재 양성과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 12}, {"no": 45, "name": "프랑스어권 지역학 전문가 양성 과정", "cat": "인문·사회", "run": true, "c26": 6, "cum": 24}, {"no": 46, "name": "재정자치 운영인력 양성과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 47, "name": "주민자치 전문과정", "cat": "인문·사회", "run": true, "c26": 3, "cum": 5}, {"no": 48, "name": "공공재정관리 전문가 과정", "cat": "인문·사회", "run": true, "c26": 23, "cum": 87}, {"no": 53, "name": "한복 전문가 양성 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 55, "name": "세계시민교육 예비전문가 과정", "cat": "인문·사회", "run": true, "c26": 2, "cum": 3}, {"no": 61, "name": "마을 스토리텔링 전문가 양성과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 62, "name": "지역ㆍ사회 갈등 해소 전문가 양성 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 63, "name": "지역문화 디지털 전문가 양성 과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 7}, {"no": 64, "name": "고령친화 지역사회 서비스디자인 전문가 양성 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 66, "name": "디지털 의사소통 전문가 과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 6}, {"no": 68, "name": "미디어법과 정책 전문 과정", "cat": "인문·사회", "run": true, "c26": 2, "cum": 15}, {"no": 73, "name": "지역 산업과 디지털 무역 전문가 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 74, "name": "독일 비즈니스 전문가 과정", "cat": "인문·사회", "run": true, "c26": 2, "cum": 3}, {"no": 75, "name": "일본 비즈니스 전문가 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 76, "name": "중국 비즈니스 전문가 과정", "cat": "인문·사회", "run": true, "c26": 3, "cum": 7}, {"no": 77, "name": "프랑스 비즈니스 전문가 과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 2}, {"no": 84, "name": "재무건강 전문가 과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 2}, {"no": 86, "name": "행정법 융합인재 양성과정", "cat": "인문·사회", "run": true, "c26": 6, "cum": 18}, {"no": 87, "name": "K-culture 지식재산융합인재 양성과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 5}, {"no": 88, "name": "미디어 리터러시 과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 4}, {"no": 89, "name": "다문화와 사회통합 이해과정", "cat": "인문·사회", "run": false, "c26": 1, "cum": 4}, {"no": 90, "name": "수리기반 경제전문가 양성 기본과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 11}, {"no": 92, "name": "경제 및 공공 정책분석 전문가 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 1}, {"no": 93, "name": "창업 입문 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 95, "name": "로컬디자인 과정", "cat": "인문·사회", "run": true, "c26": 7, "cum": 70}, {"no": 96, "name": "CCM전문가과정", "cat": "인문·사회", "run": false, "c26": 2, "cum": 4}, {"no": 97, "name": "소비트렌드전문가과정", "cat": "인문·사회", "run": true, "c26": 3, "cum": 4}, {"no": 98, "name": "동아시아 무역 이해 과정", "cat": "인문·사회", "run": true, "c26": 1, "cum": 2}, {"no": 99, "name": "디지털 커뮤니티 리더십 전문가 양성과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 124, "name": "반려동물과 사회 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 125, "name": "경찰 인재 양성 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 126, "name": "글로벌 디지털 문화활동가 양성 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 127, "name": "일본문화 전문인재 양성 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 129, "name": "디지털 광고 인재양성 과정", "cat": "인문·사회", "run": true, "c26": 2, "cum": 3}, {"no": 130, "name": "역사문화 콘텐츠 인재양성 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 131, "name": "디지털 심리학 기초 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 1}, {"no": 146, "name": "기후환경사회 디지털혁신 융합인재 양성", "cat": "인문·사회", "run": false, "c26": 0, "cum": 0}, {"no": 147, "name": "도시정책전문가 양성과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 150, "name": "법원·검찰 인재 양성 과정", "cat": "인문·사회", "run": false, "c26": 0, "cum": 0}, {"no": 151, "name": "지역산업 기반 지식재산인재양성 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 167, "name": "인적자원개발 실무 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 168, "name": "디지털문화콘텐츠전문가양성과정", "cat": "인문·사회", "run": false, "c26": 0, "cum": 0}, {"no": 177, "name": "첨단산업 전략기획 전문가 과정", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}, {"no": 188, "name": "서양 사유와 학문의 뿌리", "cat": "인문·사회", "run": true, "c26": 0, "cum": 0}], "bycat": {"AI·데이터": {"n": 41, "run": 24, "c26": 138, "cum": 659, "withRecord": 14}, "공학·기술": {"n": 37, "run": 28, "c26": 113, "cum": 1063, "withRecord": 25}, "인문·사회": {"n": 60, "run": 53, "c26": 110, "cum": 566, "withRecord": 32}, "바이오·헬스": {"n": 50, "run": 44, "c26": 71, "cum": 419, "withRecord": 16}}, "colleges": [["공과대학", "107", "80", "57", "50"], ["경상대학", "78", "75", "29", "49"], ["농업생명과학대학", "73", "54", "44", "29"], ["사회과학대학", "70", "67", "36", "34"], ["자연과학대학", "41", "21", "22", "19"], ["인문대학", "32", "26", "16", "16"], ["생활과학대학", "14", "13", "7", "7"], ["자유전공학부", "5", "4", "4", "1"], ["생명시스템과학대학", "5", "5", "3", "2"], ["사범대학", "3", "3", "1", "2"], ["국제학부", "2", "2", "2", "0"], ["국가안보융합학부", "1", "1", "0", "1"], ["예술대학", "1", "1", "1", "0"]], "depts": [["경상대학", "경제학과", "52", "52"], ["사회과학대학", "행정학부", "31", "29"], ["공과대학", "컴퓨터융합학부", "24", "18"], ["자연과학대학", "물리학과", "21", "10"], ["경상대학", "무역학과", "18", "16"], ["공과대학", "신소재공학과", "16", "12"], ["농업생명과학대학", "바이오시스템기계공학과", "16", "9"], ["공과대학", "기계공학부", "14", "10"], ["농업생명과학대학", "생물환경화학과", "14", "10"], ["인문대학", "언어학과", "12", "8"]], "top": [["경제데이터 실무이해과정", "62", "22"], ["공공재정관리 전문가 과정", "23", "14"], ["사이버보안개발자 양성 과정", "22", "10"], ["무역 데이터분석 전문가 양성과정", "16", "7"], ["반도체 소재 및 공정 특화과정", "12", "7"], ["반도체 소재부품장비 기본 과정", "11", "7"], ["융합푸드시스템 입문과정", "11", "7"], ["디지털물산업 기본과정", "10", "2"], ["지식재산 융합인재 양성과정", "10", "3"], ["스마트농업 실무인재 양성과정", "9", "5"]], "cats": [["AI·데이터", 24, 41, 128, 4818], ["공학·기술", 28, 37, 72, 2536], ["인문·사회", 53, 60, 101, 4684], ["바이오·헬스", 44, 50, 55, 1336]]};
+/* ============================================================ */
+
+const fmt = n => Number(n).toLocaleString("en-US");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const COL = { a:"#3b82f6", b:"#2dd4bf", c:"#a78bfa" };
+
+/* ---------- 공통: 막대 섹션 ---------- */
+// items: [{label, sub?, vals:[...], note?}] / series: [{name,color}]
+function section(title, items, series, limit, extraNote) {
+  const max = Math.max(1, ...items.map(it => it.vals.reduce((a,b)=>a+b,0)));
+  const lg = series.length > 1
+    ? `<span class="lg">${series.map(s=>`<i style="background:${s.color}"></i>${s.name}`).join("")}</span>` : "";
+  const rows = items.map((it,i) => {
+    const tot = it.vals.reduce((a,b)=>a+b,0);
+    const parts = it.vals.map((v,k)=>`<span style="width:${v/max*100}%;background:${series[k].color}"></span>`).join("");
+    const detail = series.length > 1
+      ? `<small>${series.map((s,k)=>`${s.name} ${it.vals[k]}`).join(" · ")}</small>` : (it.note?`<small>${esc(it.note)}</small>`:"");
+    return `<div class="srow ${limit && i>=limit?'extra':''}">
+      <div class="lb">${esc(it.label)}${it.sub?`<small>${esc(it.sub)}</small>`:""}</div>
+      <div class="stack">${parts}</div>
+      <div class="v"><b>${fmt(tot)}</b>${detail}</div></div>`;
+  }).join("");
+  const more = limit && items.length > limit
+    ? `<button class="more" type="button" data-more>전체 보기 (${items.length}개)</button>` : "";
+  return `<div class="sec"><h4>${esc(title)}${lg}</h4>${rows}${more}${extraNote?`<div class="lead" style="margin-top:8px">${extraNote}</div>`:""}</div>`;
+}
+const SER2 = [{name:"복수전공",color:COL.a},{name:"부전공",color:COL.b}];
+
+/* ---------- 열기/닫기 공통 처리 ---------- */
+function wire(card, panel, render) {
+  let openKey = null;
+  const close = () => { panel.classList.remove("open"); card.querySelectorAll(".click.active").forEach(e=>e.classList.remove("active")); openKey=null; };
+  card.addEventListener("click", ev => {
+    if (ev.target.closest("[data-more]")) {
+      const sec = ev.target.closest(".sec"); const on = sec.classList.toggle("all");
+      const btn = ev.target.closest("[data-more]"); btn.textContent = on ? "접기" : btn.dataset.label;
+      return;
+    }
+    if (ev.target.closest("[data-close]")) { close(); return; }
+    const el = ev.target.closest("[data-key]");
+    if (!el || el.dataset.off) return;
+    const key = el.dataset.key;
+    if (openKey === key) { close(); return; }
+    close(); openKey = key; el.classList.add("active");
+    panel.innerHTML = `<button class="close" type="button" data-close>닫기 ✕</button>` + render(key);
+    panel.querySelectorAll("[data-more]").forEach(b => b.dataset.label = b.textContent);
+    panel.classList.add("open");
+    panel.scrollIntoView({behavior:"smooth", block:"nearest"});
+  });
+  card.addEventListener("keydown", ev => {
+    if ((ev.key==="Enter"||ev.key===" ") && ev.target.matches("[data-key]")) { ev.preventDefault(); ev.target.click(); }
+  });
+}
+
+/* =====================  03 다전공 현황  ===================== */
+(function(){
+  const card = document.getElementById("c3");
+  const TYPES = ["연계전공","산학융복합전공","자기설계전공","융합전공","DSC공유대학"];
+  const bt = D3.byType;
+  const kpi = [["복수전공 이수자","복수전공", D3.kpi["복수전공"].total],
+               ["부전공 이수자","부전공", D3.kpi["부전공"].total],
+               ["융합전공 계 이수자","융합계", Object.values(bt).reduce((a,t)=>a+t.total,0)]];
+  const rows = TYPES.map(t => {
+    const d = bt[t];
+    if (!d) return {t, off:true};
+    return {t, n:d.programs.length, p:d.total, avg:(d.total/d.programs.length)};
+  });
+  card.innerHTML = `
+    <div class="head"><h2><span>03</span>${CONFIG.d3.title}</h2><div class="basis">${CONFIG.d3.basis}</div></div>
+    <div class="kpis">${kpi.map(k=>`<div class="kpi click" tabindex="0" role="button" data-key="k:${k[1]}">
+        <div class="label">${k[0]}<span class="caret">▸</span></div><div class="num">${fmt(k[2])}</div></div>`).join("")}</div>
+    <div class="sub">융합전공 유형별</div>
+    <p class="hint">▸ 숫자나 유형(행)을 클릭하면 상세 정보가 표시됩니다</p>
+    <table class="main">
+      <tr><th>유형</th><th>프로그램(개)</th><th>이수자(명)</th><th>프로그램당 평균(명)</th></tr>
+      ${rows.map(r => r.off
+        ? `<tr class="off"><td>${r.t}</td><td>-</td><td>-</td><td>-</td></tr>`
+        : `<tr class="click" tabindex="0" role="button" data-key="t:${r.t}"><td>${r.t}<span class="caret">▸</span></td><td>${r.n}</td><td>${r.p}</td><td>${r.avg.toFixed(1)}</td></tr>`).join("")}
+    </table>
+    <div class="detail" id="d3"></div>
+    <div class="note"><p>2026학년도 1학기 융복합창의전공 이수자 명부(2026.8.19. 기준 재학 538명·휴학 23명, 계 561건) · 교직 복수전공은 별도 명부로 미포함 · 융합전공 계는 복수·부전공 이수자와 중복 포함 · 프로그램은 이수자가 있는 전공 수 · 유형은 학사운영 지침 별표 및 이수학과 기준 · 2학기 선발자는 이수자 미확정으로 제외</p>
+    <p>상세: 이수자 명부를 집계한 값이며 학생 단위 정보는 표시하지 않습니다. 「주전공」은 이수자가 원래 소속된 학과(부)입니다.</p></div>`;
+
+  const sum = (arr,i)=>arr.reduce((a,x)=>a+x[i],0);
+  function render(key) {
+    const [kind, name] = key.split(":");
+    if (kind === "t") {
+      const d = bt[name];
+      return `<h3>${name} 상세</h3>
+        <p class="lead">프로그램 ${d.programs.length}개 · 이수자 ${d.total}명 (복수전공 ${sum(d.programs,1)} · 부전공 ${sum(d.programs,2)})</p>`
+        + section("전공(프로그램)별 이수자", d.programs.map(p=>({label:p[0],vals:[p[1],p[2]]})), SER2, 10)
+        + section("주전공 대학별 분포", d.colleges.map(c=>({label:c[0],vals:[c[1],c[2]]})), SER2, 8)
+        + section("주전공 학과별 분포", d.depts.map(x=>({label:x[1],sub:x[0],vals:[x[2],x[3]]})), SER2, 10);
+    }
+    if (name === "융합계") {
+      // 4개 유형 합산 주전공 대학 분포
+      const m = {}; 
+      Object.values(bt).forEach(t=>t.colleges.forEach(c=>{ m[c[0]]=m[c[0]]||[0,0]; m[c[0]][0]+=c[1]; m[c[0]][1]+=c[2]; }));
+      const cl = Object.entries(m).map(([k,v])=>({label:k,vals:v})).sort((a,b)=>(b.vals[0]+b.vals[1])-(a.vals[0]+a.vals[1]));
+      const byT = TYPES.filter(t=>bt[t]).map(t=>({label:t,vals:[sum(bt[t].programs,1),sum(bt[t].programs,2)]}));
+      return `<h3>융합전공 계 상세</h3><p class="lead">연계·자기설계·융합·DSC공유대학 이수 ${kpi[2][2]}명 (복수·부전공 이수자와 중복 포함)</p>`
+        + section("유형별 이수자", byT, SER2)
+        + section("주전공 대학별 분포", cl, SER2, 8);
+    }
+    const k = D3.kpi[name];
+    return `<h3>${name} 이수자 상세</h3><p class="lead">일반 학과(부) 이수를 포함한 ${name} 이수자 ${k.total}명</p>`
+      + section("주전공 대학별 분포", k.colleges.map(c=>({label:c[0],vals:[c[1]+c[2]]})), [{name:name,color:name==="복수전공"?COL.a:COL.b}]);
+  }
+  wire(card, card.querySelector("#d3"), render);
+})();
+
+/* =====================  04 마이크로디그리 현황  ===================== */
+(function(){
+  const card = document.getElementById("c4");
+  const K = CONFIG.d4, cats = D4.cats;
+  const run = cats.reduce((a,c)=>a+c[1],0), setup = cats.reduce((a,c)=>a+c[2],0);
+  const rate = (K.completers / K.participants * 100).toFixed(1);
+  const maxP = Math.max(...cats.map(c=>c[4])), W = 88;
+  card.innerHTML = `
+    <div class="head"><h2><span>04</span>${K.title}</h2><div class="basis">${K.basis}</div></div>
+    <div class="kpis">
+      <div class="kpi"><div class="label">운영과정 / 설치과정</div><div class="num">${run} <small>/ ${setup}</small></div></div>
+      <div class="kpi"><div class="label">참여 학생</div><div class="num">${fmt(K.participants)}</div></div>
+      <div class="kpi click" tabindex="0" role="button" data-key="k:done"><div class="label">이수자 (학생 / 건수)<span class="caret">▸</span></div>
+        <div class="num">${K.completers}<span class="unit">명</span> <small>/ ${K.cases}건</small></div>
+        <div class="rate">이수율 ${rate}% (학생 기준)</div></div>
+    </div>
+    <div class="legend"><i class="g"></i>참여 학생<i class="b"></i>이수자</div>
+    <p class="hint">▸ 이수자 숫자나 분류(막대)를 클릭하면 상세 정보가 표시됩니다</p>
+    <div class="bars">${cats.map(c=>`
+      <div class="row click" tabindex="0" role="button" data-key="c:${c[0]}">
+        <div class="name">${c[0]} (${c[1]}/${c[2]}개)<span class="caret">▸</span></div>
+        <div class="track"><div class="grey" style="width:${c[4]/maxP*W}%"></div><div class="blue" style="width:${c[3]/maxP*W}%"></div></div>
+        <div class="val">${c[3]} / ${fmt(c[4])}</div></div>`).join("")}</div>
+    <div class="detail" id="d4"></div>
+    <div class="note"><p>분류: 과정명 기준 · 괄호=운영/설치 과정 · 학생은 분류별 고유 학번 · 운영과정: 2026학년도 강좌 개설 과정 · 참여 학생: 2026학년도 마이크로디그리 인정 수강 학생(고유 학번)</p>
+    <p>이수자: 2026-1 확정 ${K.cases}건(복수과정 이수 포함), 학생 ${K.completers}명, 2학기 이수는 졸업 시점 집계 · 이수율=이수자÷참여 학생 · 설치 이후 누적 이수 ${fmt(K.cumulative)}건</p>
+    <p>상세: 막대의 이수자는 분류별 고유 학번(복수 분류 이수 시 중복 포함)이고, 상세의 「2026-1 이수」는 과정별 이수 건수입니다.</p></div>`;
+
+  function render(key) {
+    const [kind, name] = key.split(":");
+    if (kind === "k") {
+      const sers = [{name:"졸업",color:COL.a},{name:"미졸업",color:COL.b}];
+      const col = D4.colleges.map(r=>({label:r[0],sub:`학생 ${r[2]}명`,vals:[+r[3],+r[4]]}));
+      const dep = D4.depts.map(r=>({label:r[1],sub:r[0],vals:[+r[2]],note:`학생 ${r[3]}명`}));
+      const top = D4.top.map(r=>({label:r[0],vals:[+r[2],(+r[1])-(+r[2])]}));
+      return `<h3>이수자 상세 (2026-1 확정 ${K.cases}건 · 학생 ${K.completers}명)</h3>
+        <p class="lead">통합정보시스템 기준학점 달성 명단(2025학년도 후기 졸업 대상, 4~5학년) 기준입니다. 졸업 ${D4.colleges.reduce((a,r)=>a+(+r[3]),0)}건 · 미졸업 ${D4.colleges.reduce((a,r)=>a+(+r[4]),0)}건</p>`
+        + section("소속 단과대학별 분포 (이수 건수)", col, sers, 8, "학생 수 열 합계는 352명이나 단과대학 기재가 2곳인 1명이 있어 실제 학생 수는 351명입니다.")
+        + section("이수 상위 10개 학과 (이수 건수)", dep, [{name:"이수 건수",color:COL.a}])
+        + section("이수 상위 10개 과정 (이수 건수)", top, sers);
+    }
+    const list = D4.courses.filter(c=>c.cat===name).sort((a,b)=>(b.c26||0)-(a.c26||0)||(b.cum||0)-(a.cum||0)||a.no-b.no);
+    const b = D4.bycat[name];
+    return `<h3>${name} 분류 상세</h3>
+      <p class="lead">설치 ${b.n}개 과정 중 2026학년도 강좌 개설 ${b.run}개 · 2026-1 이수 ${b.c26}건(이수 실적 과정 ${b.withRecord}개) · 설치 이후 누적 이수 ${fmt(b.cum)}건</p>
+      <div class="sec"><h4>과정별 이수 현황 <span class="lg">● 2026학년도 강좌 개설 · ○ 미개설 / 건수 기준</span></h4>
+      <div class="scroll"><table class="sm"><tr><th>과정명</th><th>개설</th><th>2026-1 이수</th><th>누적 이수</th></tr>
+      ${list.map(c=>`<tr><td>${esc(c.name)}</td><td><span class="dot ${c.run?'':'no'}"></span>${c.run?"개설":"미개설"}</td>
+        <td class="${c.c26?'':'zero'}">${c.c26||0}</td><td class="${c.cum?'':'zero'}">${c.cum||0}</td></tr>`).join("")}
+      </table></div></div>`;
+  }
+  wire(card, card.querySelector("#d4"), render);
+})();
+</script>
+</body>
+</html>
