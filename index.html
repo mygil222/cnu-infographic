@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>충남대학교 다전공·마이크로디그리 현황</title>
+<title>학사 INFO</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
 <style>
   :root { --bg:#0f0f0f; --card:#1a1a1a; --line:#333; --text:#e8e8e8; --mute:#999; --dim:#888;
           --blue:#3b82f6; --teal:#2dd4bf; --grey:#4a4a4a; --green:#6ee7a8; --panel:#141414; }
@@ -206,7 +207,6 @@
 <div class="top">
   <h1>충남대학교 학사 현황</h1>
   <p id="headline"></p>
-  <div class="draftbar">⚠ 초안 — 01·03·04·05는 2026.10.1. 기준 집계값이고, 02와 아래 지표 띠는 대학알리미 공시연도 기준입니다. 상단 문장은 두 기준을 함께 씁니다.</div>
 </div>
 <div class="strip" id="strip"></div>
 <div class="strip" id="strip2"></div>
@@ -217,7 +217,7 @@
   <div class="cell"><div class="card" id="c4"></div></div>
   <div class="cell"><div class="card" id="c5"></div></div>
 </div>
-<div class="footer">집계 자료만 표시합니다 (학번·성명 등 개인정보 미포함) · 초안</div>
+<div class="footer">집계 자료만 표시합니다 (학번·성명 등 개인정보 미포함)</div>
 
 <script>
 /* ============================================================
@@ -228,7 +228,7 @@
    ============================================================ */
 const CONFIG = {
   d3: { title:"다전공 현황", basis:"2026학년도 1학기 이수 (8.19. 기준)" },
-  d4: { title:"마이크로디그리 현황", basis:"2026학년도 누적 · 2026.10. 기준",
+  d4: { title:"마이크로디그리 현황", basis:"2026학년도 1학기 기준",
         participants:9883,    // 참여 학생(고유 학번) — 2026-1 기준학점목록(소단위 전공과정 중 마이크로디그리과정만, 트랙과정 제외)
         completers:351,       // 2026-1 이수 학생 수
         cases:432,            // 2026-1 이수 건수
@@ -531,34 +531,41 @@ const DG = {"groups": [{"name": "일반대학원", "e": 2984, "l": 323, "pr": [[
 /* ---------- 02 중도탈락 추이·경보 (실제: 대학알리미 공시) ---------- */
 const D2 = {"years": [2021, 2022, 2023, 2024, 2025], "rate": [3.39, 3.92, 4.18, 4.01, 4.0], "reg": [23165.0, 22869.0, 22413.0, 22384.0, 22392.0], "n": [785.0, 897.0, 937.0, 898.0, 896.0], "reasons": [[2021, 48.0, 147.0, 542.0, 0.0, 0.0, 0.0, 45.0, 3.0], [2022, 57.0, 98.0, 684.0, 6.0, 0.0, 0.0, 51.0, 1.0], [2023, 42.0, 121.0, 709.0, 10.0, 0.0, 0.0, 54.0, 1.0], [2024, 49.0, 117.0, 641.0, 16.0, 0.0, 2.0, 71.0, 2.0], [2025, 31.0, 137.0, 631.0, 17.0, 0.0, 1.0, 73.0, 6.0]], "rnames": ["미등록", "미복학", "자퇴", "학사경고", "학생활동", "유급제적", "수업연한초과", "기타"]};
 const IND = {"new": {"y": [2021, 2022, 2023, 2024, 2025], "v": [99.5, 99.8, 99.8, 99.8, 100.0], "ratio": "10.3 : 1"}, "enr": {"y": [2021, 2022, 2023, 2024, 2025], "v": [109.9, 105.4, 107.8, 107.0, 107.0]}, "job": {"y": [2021, 2022, 2023, 2024, 2025], "v": [58.4, 62.1, 65.2, 64.1, 61.1]}, "fst": {"y": [2021, 2022, 2023, 2024, 2025], "v": [695.0, 641.0, 608.0, 593.0, 674.0], "deg": [488.0, 412.0, 336.0, 302.0, 299.0]}, "fdrop": {"y": [2021, 2022, 2023, 2024, 2025], "v": [21.0, 26.0, 190.0, 62.0, 42.0], "reg": [791.0, 695.0, 641.0, 608.0, 593.0]}};
-function lineChart(pts, ymin, ymax, ticks) {
+function lineChart(pts, ymin, ymax, ticks, sel) {
   const W=560,H=215,L=44,R=50,T=14,B=30, pw=W-L-R, ph=H-T-B;
   const X=i=>L+pw*i/(pts.length-1), Y=v=>T+ph*(1-(v-ymin)/(ymax-ymin));
   const grid = ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#2c2c2c"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end">${v}%</text>`).join("");
-  const xs = pts.map((p,i)=>`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${p[0]}</text>`).join("");
+  const xs = pts.map((p,i)=>`<text data-y="${i}" x="${X(i)}" y="${H-8}" text-anchor="middle" style="cursor:pointer;${i===sel?'fill:#fff;font-weight:700':''}">${p[0]}</text>`).join("");
   const path = pts.map((p,i)=>`${i?"L":"M"}${X(i)},${Y(p[1])}`).join(" ");
-  const dots = pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p[1])}" r="${i===pts.length-1?5:3.5}" fill="#3b82f6"/><text x="${X(i)}" y="${Y(p[1])-10}" text-anchor="middle" style="fill:#cfd5df">${p[1].toFixed(2)}</text>`).join("");
+  const dots = pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p[1])}" r="${i===sel?6:3.5}" fill="${i===sel?'#60a5fa':'#3b82f6'}" ${i===sel?'stroke="#fff" stroke-width="2"':''}/><text x="${X(i)}" y="${Y(p[1])-12}" text-anchor="middle" style="fill:${i===sel?'#fff':'#cfd5df'};${i===sel?'font-weight:700':''}">${p[1].toFixed(2)}</text><circle data-y="${i}" cx="${X(i)}" cy="${Y(p[1])}" r="16" fill="transparent" style="cursor:pointer"/>`).join("");
   return `<svg class="line" viewBox="0 0 ${W} ${H}" role="img" aria-label="중도탈락률 추이">${grid}${xs}<path d="${path}" fill="none" stroke="#3b82f6" stroke-width="2"/>${dots}</svg>`;
 }
 (function(){
-  const card = document.getElementById("c2"), d = D2, n = d.years.length - 1;
-  const cur = d.rate[n], diff = +(cur - d.rate[n-1]).toFixed(2);
-  const rs = d.reasons[n].slice(1), tot = d.n[n], order = rs.map((v,i)=>[d.rnames[i],v]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
-  card.innerHTML = `
-    <div class="head"><h2><span>02</span>중도탈락 추이·경보</h2><div class="basis">대학알리미 공시 ${d.years[0]}~${d.years[n]}</div></div>
+  const card = document.getElementById("c2"), d = D2, last = d.years.length - 1;
+  let sel = last;
+  function render(){
+    const y = d.years[sel], cur = d.rate[sel], prev = sel ? d.rate[sel-1] : null;
+    const diff = prev===null ? null : +(cur - prev).toFixed(2);
+    const rs = d.reasons[sel].slice(1), tot = d.n[sel], order = rs.map((v,i)=>[d.rnames[i],v]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+    card.innerHTML = `
+    <div class="head"><h2><span>02</span>중도탈락 추이</h2><div class="basis">대학알리미 공시 ${d.years[0]}~${d.years[last]}</div></div>
     <div class="sub2">중도탈락률 = 사유별 중도탈락 학생 ÷ 재적학생 (학부)</div>
     <div class="kpis">
-      <div class="kpi static"><div class="label">${d.years[n]} 공시 중도탈락률</div><div class="num">${cur.toFixed(2)}%</div>
-        <div class="delta ${diff<=0?'down':'up'}">${diff<0?"−":diff>0?"+":"±"}${Math.abs(diff).toFixed(2)}%p 전년 대비</div></div>
+      <div class="kpi static"><div class="label">${y} 공시 중도탈락률</div><div class="num">${cur.toFixed(2)}%</div>
+        ${diff===null?`<div class="delta" style="color:var(--mute)">첫 공시연도</div>`:`<div class="delta ${diff<=0?'down':'up'}">${diff<0?"−":diff>0?"+":"±"}${Math.abs(diff).toFixed(2)}%p 전년 대비</div>`}</div>
       <div class="kpi static"><div class="label">중도탈락 학생</div><div class="num">${fmt(tot)}<span style="font-size:22px;color:#999">명</span></div>
-        <div style="color:#8b93a1;font-size:16px">재적 ${fmt(d.reg[n])}명</div></div>
+        <div style="color:#8b93a1;font-size:16px">재적 ${fmt(d.reg[sel])}명</div></div>
     </div>
-    ${lineChart(d.years.map((y,i)=>[y,d.rate[i]]), 3, 5, [3,4,5])}
-    <div class="sub2" style="margin-top:0">${d.years[n]} 공시 탈락 사유 <span style="color:#777">· 막대 길이 = 탈락자 중 비중</span></div>
+    <div class="hint" style="margin:0 0 4px">▸ 그래프의 연도나 점을 누르면 해당 연도 탈락 사유가 표시됩니다</div>
+    ${lineChart(d.years.map((yy,i)=>[yy,d.rate[i]]), 3, 5, [3,4,5], sel)}
+    <div class="sub2" style="margin-top:0">${y} 공시 탈락 사유 <span style="color:#777">· 막대 길이 = 사유 중 최대값 대비</span></div>
     ${order.map(x=>`<div class="hb ${x[0]=="자퇴"?'hot':''}"><div class="lb">${x[0]}</div>
       <div class="bar"><i style="width:${x[1]/order[0][1]*100}%"></i></div><div class="v">${x[1]}명<div style="font-size:13px;font-weight:400;color:#8b93a1">${(x[1]/tot*100).toFixed(1)}%</div></div></div>`).join("")}
-    <div class="note"><p>공시연도별 값이며 대학알리미 기준(학부, 정원내외 포함)이라 1번 카드의 10.1. 재적과 숫자가 다릅니다. 최신 공시는 ${d.years[n]}년입니다. 학사경고·수업연한초과 등은 제적 사유별로 집계됩니다.</p></div>`;
-  window.__d2 = {cur, diff};
+    <div class="note"><p>공시연도별 값이며 대학알리미 기준(학부, 정원내외 포함)이라 1번 카드의 10.1. 재적과 숫자가 다릅니다. 최신 공시는 ${d.years[last]}년입니다. 학사경고·수업연한초과 등은 제적 사유별로 집계됩니다.</p></div>`;
+  }
+  card.addEventListener("click", e => { const t = e.target.closest("[data-y]"); if(!t) return; sel = +t.dataset.y; render(); });
+  render();
+  window.__d2 = {cur: d.rate[last], diff: +(d.rate[last]-d.rate[last-1]).toFixed(2)};
 })();
 
 /* ---------- 대학알리미 주요 지표 띠 ---------- */
