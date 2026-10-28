@@ -200,6 +200,7 @@
     .hb { grid-template-columns:1fr; gap:4px; padding:8px 0; } .hb .v { text-align:left; }
   }
   @media (max-width:720px) { .top h1 { font-size:24px; } .top p { font-size:15px; } .strip .tile { padding:12px 14px; } .strip .tile .n { font-size:24px; } }
+.hb[hidden] { display:none; }
 </style>
 </head>
 <body>
@@ -209,7 +210,6 @@
   <p id="headline"></p>
 </div>
 <div class="strip" id="strip"></div>
-<div class="strip" id="strip2"></div>
 <div class="wrap">
   <div class="cell"><div class="card" id="c1"></div></div>
   <div class="cell"><div class="card" id="c2"></div></div>
@@ -489,6 +489,7 @@ const DG = {"groups": [{"name": "일반대학원", "e": 2984, "l": 323, "pr": [[
   const tot = uTot + gE + gL, enr = uEnr + gE, leave = uLeave + gL;
   const C = ["#3b82f6","#f97316","#a78bfa"], pc = (a,b)=>(a/b*100).toFixed(1);
   const bar = (v,w) => `<div class="stk" style="width:${w}%">${[1,2,3].map(k=>`<span style="width:${v[k]/v[0]*100}%;background:${C[k-1]}"></span>`).join("")}</div>`;
+  const cut = Math.max(1, d.cols.findIndex(c=>c[0]=="농업생명과학대학"));
   const kinds = [["학부",[uTot,uEnr,uLeave,defer]], ...DG.groups.map(x=>[x.name,[x.e+x.l,x.e,x.l,0]])];
   const kmax = Math.max(...kinds.map(k=>k[1][0]));
   card.innerHTML = `
@@ -506,13 +507,16 @@ const DG = {"groups": [{"name": "일반대학원", "e": 2984, "l": 323, "pr": [[
     <div class="sub2" style="margin-top:14px">학부 학년별 재적</div>
     ${d.grades.map(g=>`<div class="hb"><div class="lb">${g[0]}학년${g[0]==4?" 이상":""}</div>${bar(g.slice(1),g[1]/Math.max(...d.grades.map(x=>x[1]))*100)}<div class="v">${fmt(g[1])}</div></div>`).join("")}
     <div class="sub2" style="margin-top:14px">학부 단과대학별 재적 <span style="color:#777">· 행을 누르면 학과별</span></div>
-    ${d.cols.map((c,i)=>`<div class="hb" data-c1="${i}" style="cursor:pointer" title="재학 ${fmt(c[1][1])} · 휴학 ${fmt(c[1][2])} · 유예 ${c[1][3]}">
+    ${d.cols.map((c,i)=>`<div class="hb${i>=cut?" xc1":""}" ${i>=cut?"hidden":""} data-c1="${i}" style="cursor:pointer" title="재학 ${fmt(c[1][1])} · 휴학 ${fmt(c[1][2])} · 유예 ${c[1][3]}">
       <div class="lb">${c[0]} <span style="color:#6ea8ff">▸</span></div>${bar(c[1],c[1][0]/max*100)}
       <div class="v">${fmt(c[1][0])}<div style="white-space:nowrap;font-size:13px;font-weight:400;color:#8b93a1">휴학 ${pc(c[1][2],c[1][0])}%</div></div></div><div id="d1_${i}" hidden></div>`).join("")}
+    <button class="more" data-xc1="1">나머지 ${d.cols.length-cut}개 단과대학 보기</button>
     <div class="note"><p>재적 = 재학 + 휴학 + 학사학위취득 유예(학부 ${defer}명). 휴학률 = 휴학 ÷ 재적. 학부는 재적학생 현황, 대학원은 대학원별 재적학생 현황(재학·휴학) 파일 기준이며 대학원 유예·자퇴(제적) 인원은 없습니다. 특수대학원에는 스마트농업·국가정책·경영·보건·산업·행정·교육·평화안보·특허법무대학원을, 전문대학원에는 법학전문·국가정책전문·신약전문·에너지과학기술·분석과학기술대학원을 넣었습니다. 폐과 학과의 잔여 학생도 포함됩니다.</p></div>`;
   const tbl = (head, rows) => '<table class="sm" style="width:100%;margin:2px 0 12px"><tr>'+head.map((h,i)=>`<th${i?"":' style="text-align:left"'}>${h}</th>`).join("")+"</tr>"+rows.join("")+"</table>";
   card.addEventListener("click", e => {
-    let r = e.target.closest("[data-xt]");
+    let r = e.target.closest("[data-xc1]");
+    if(r){ const rows = card.querySelectorAll(".hb.xc1"), open = rows[0].hidden; rows.forEach(x=>{ x.hidden=!open; if(!open) document.getElementById("d1_"+x.dataset.c1).hidden=true; }); r.textContent = open ? "접기" : `나머지 ${rows.length}개 단과대학 보기`; return; }
+    r = e.target.closest("[data-xt]");
     if(r){ const box = document.getElementById("g1_"+r.dataset.xt), rows = box.querySelectorAll("tr.xtra"), open = rows[0].hidden; rows.forEach(x=>x.hidden=!open); r.textContent = open ? "접기" : `나머지 ${rows.length}개 보기`; return; }
     r = e.target.closest("[data-c1]");
     if(r){ const i = r.dataset.c1, box = document.getElementById("d1_"+i), c = d.cols[i];
@@ -530,7 +534,6 @@ const DG = {"groups": [{"name": "일반대학원", "e": 2984, "l": 323, "pr": [[
 
 /* ---------- 02 중도탈락 추이·경보 (실제: 대학알리미 공시) ---------- */
 const D2 = {"years": [2021, 2022, 2023, 2024, 2025], "rate": [3.39, 3.92, 4.18, 4.01, 4.0], "reg": [23165.0, 22869.0, 22413.0, 22384.0, 22392.0], "n": [785.0, 897.0, 937.0, 898.0, 896.0], "reasons": [[2021, 48.0, 147.0, 542.0, 0.0, 0.0, 0.0, 45.0, 3.0], [2022, 57.0, 98.0, 684.0, 6.0, 0.0, 0.0, 51.0, 1.0], [2023, 42.0, 121.0, 709.0, 10.0, 0.0, 0.0, 54.0, 1.0], [2024, 49.0, 117.0, 641.0, 16.0, 0.0, 2.0, 71.0, 2.0], [2025, 31.0, 137.0, 631.0, 17.0, 0.0, 1.0, 73.0, 6.0]], "rnames": ["미등록", "미복학", "자퇴", "학사경고", "학생활동", "유급제적", "수업연한초과", "기타"]};
-const IND = {"new": {"y": [2021, 2022, 2023, 2024, 2025], "v": [99.5, 99.8, 99.8, 99.8, 100.0], "ratio": "10.3 : 1"}, "enr": {"y": [2021, 2022, 2023, 2024, 2025], "v": [109.9, 105.4, 107.8, 107.0, 107.0]}, "job": {"y": [2021, 2022, 2023, 2024, 2025], "v": [58.4, 62.1, 65.2, 64.1, 61.1]}, "fst": {"y": [2021, 2022, 2023, 2024, 2025], "v": [695.0, 641.0, 608.0, 593.0, 674.0], "deg": [488.0, 412.0, 336.0, 302.0, 299.0]}, "fdrop": {"y": [2021, 2022, 2023, 2024, 2025], "v": [21.0, 26.0, 190.0, 62.0, 42.0], "reg": [791.0, 695.0, 641.0, 608.0, 593.0]}};
 function lineChart(pts, ymin, ymax, ticks, sel) {
   const W=560,H=215,L=44,R=50,T=14,B=30, pw=W-L-R, ph=H-T-B;
   const X=i=>L+pw*i/(pts.length-1), Y=v=>T+ph*(1-(v-ymin)/(ymax-ymin));
@@ -566,23 +569,6 @@ function lineChart(pts, ymin, ymax, ticks, sel) {
   card.addEventListener("click", e => { const t = e.target.closest("[data-y]"); if(!t) return; sel = +t.dataset.y; render(); });
   render();
   window.__d2 = {cur: d.rate[last], diff: +(d.rate[last]-d.rate[last-1]).toFixed(2)};
-})();
-
-/* ---------- 대학알리미 주요 지표 띠 ---------- */
-(function(){
-  const spark = (v) => { const w=110,h=30,mn=Math.min(...v),mx=Math.max(...v),r=(mx-mn)||1;
-    const pt = v.map((x,i)=>`${(i/(v.length-1)*w).toFixed(1)},${(h-3-(x-mn)/r*(h-8)).toFixed(1)}`);
-    return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;margin-top:6px"><polyline points="${pt.join(" ")}" fill="none" stroke="#3b82f6" stroke-width="2"/><circle cx="${pt[pt.length-1].split(",")[0]}" cy="${pt[pt.length-1].split(",")[1]}" r="3" fill="#3b82f6"/></svg>`; };
-  const last = a => a[a.length-1], dl = (a,u,dg=1) => { const x = last(a)-a[a.length-2]; return `${x>0?"▲":x<0?"▼":"–"} ${Math.abs(x).toFixed(dg)}${u}`; };
-  const T = [
-    ["신입생 충원율(정원내)", last(IND.new.v).toFixed(1)+"%", IND.new.v, `경쟁률 ${IND.new.ratio}`],
-    ["재학생 충원율(정원내)", last(IND.enr.v).toFixed(1)+"%", IND.enr.v, dl(IND.enr.v,"%p")+" 전년 대비"],
-    ["졸업생 취업률", last(IND.job.v).toFixed(1)+"%", IND.job.v, dl(IND.job.v,"%p")+" 전년 대비"],
-    ["외국인 유학생", fmt(last(IND.fst.v))+"명", IND.fst.v, `학위과정 ${fmt(last(IND.fst.deg))}명`],
-    ["외국인 중도탈락", fmt(last(IND.fdrop.v))+"명", IND.fdrop.v, `외국인 재적 ${fmt(last(IND.fdrop.reg))}명 중`]
-  ];
-  document.getElementById("strip2").innerHTML = '<div class="tile" style="grid-column:1/-1;padding:10px 22px;color:var(--mute);font-size:15px">대학알리미 공시 지표 · '+IND.new.y[0]+'~'+last(IND.new.y)+' 공시연도(선: 5개년 추이)</div>' +
-    T.map(t=>`<div class="tile"><div class="l">${t[0]}</div><div class="n">${t[1]}</div><div style="color:#8b93a1;font-size:14px;margin-top:2px">${t[3]}</div>${spark(t[2])}</div>`).join("");
 })();
 
 /* ---------- 05 강좌 개설·폐강 현황 (개설: 실제 수강편람 / 폐강: 자료 대기) ---------- */
